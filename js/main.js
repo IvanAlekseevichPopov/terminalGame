@@ -1,9 +1,9 @@
 import { LEVELS } from '../levels.js';
+import { pickEffect } from './fx.js';
 
 const HINT_AFTER = 3;
 const NEXT_WORD_MS = 700;
 const GRANTED_MS = 2600;
-const WON_MS = 500;
 
 const $ = id => document.getElementById(id);
 // Английская раскладка печатает русские буквы по тем же клавишам: ребёнок не переключает раскладку.
@@ -14,7 +14,7 @@ const norm = s => s.toLowerCase().replace(/ё/g, 'е');
 
 let scene = 'login';
 let level = 0, word = 0, typed = '', wrong = 0;
-let menuSel = 0, nextTimer = null;
+let menuSel = 0, nextTimer = null, fxRun = 0;
 let audioCtx = null, voice = null;
 
 function levelFromHash() {
@@ -101,6 +101,8 @@ function speak() {
   voice = a;
   $('speak').classList.add('on');
   status('слушай…');
+  $('typed').classList.remove('won');
+  $('fx').textContent = ''; $('fx').className = '';
   const done = () => {
     if (voice !== a) return;
     voice = null;
@@ -113,6 +115,8 @@ function speak() {
 
 function startLevel(n) {
   clearTimeout(nextTimer);
+  fxRun++;
+  document.body.classList.remove('accepting');
   if (voice) { voice.pause(); voice = null; }
   $('typed').classList.remove('won');
   level = n; word = 0; typed = ''; wrong = 0;
@@ -137,10 +141,13 @@ function accept() {
   sfx.access();
   scene = 'accepting';
   $('typed').classList.add('won');
-  setTimeout(accepted, WON_MS);
+  status('');
+  document.body.classList.add('accepting');
+  const run = ++fxRun;
+  pickEffect().run({ fx: $('fx'), typed: $('typed'), word: target(), alive: () => run === fxRun }).then(accepted);
 }
 function accepted() {
-  $('typed').classList.remove('won');
+  document.body.classList.remove('accepting');
   okLine(target());
   word++; typed = ''; wrong = 0;
   render();
@@ -218,7 +225,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('mousedown', () => { if (scene === 'login') begin(); });
 // Родитель может набрать #level=N в той же вкладке, в том числе с финального экрана и из паузы.
 window.addEventListener('hashchange', () => {
-  if (!['playing', 'pause', 'final'].includes(scene) || levelFromHash() === level) return;
+  if (!['playing', 'accepting', 'pause', 'final'].includes(scene) || levelFromHash() === level) return;
   $('pause').classList.remove('on'); $('final').classList.remove('on'); document.body.classList.remove('final');
   scene = 'playing';
   startLevel(levelFromHash());
