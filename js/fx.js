@@ -94,7 +94,7 @@ const BAR = {
   }),
 };
 
-// Дождь знаков, сквозь который проступает «ДОСТУП».
+// Дождь знаков, сквозь который проступает «ДОСТУП РАЗРЕШЁН»; с появлением фразы дождь уходит в тень.
 const RAIN = {
   ms: 2600, hold: 1400,
   cols: 36, rows: 6,
@@ -102,7 +102,8 @@ const RAIN = {
     const { cols, rows } = RAIN;
     const drops = [];
     for (let x = 0; x < cols; x++) for (let k = 0; k < 2; k++) drops.push({ x, y: -rnd(rows * 2), v: 0.25 + Math.random() * 0.25 });
-    const word = ' ДОСТУП ', wx = Math.floor((cols - word.length) / 2), wy = 3;
+    const word = ' ДОСТУП РАЗРЕШЁН ', wx = Math.floor((cols - word.length) / 2), wy = 3;
+    const bg = s => `<span class="bg">${esc(s)}</span>`;
     return animate(RAIN.ms, alive, (t, dt) => {
       const grid = Array.from({ length: rows }, () => Array(cols).fill(' '));
       for (const d of drops) {
@@ -113,12 +114,13 @@ const RAIN = {
       let html = '';
       for (let y = 0; y < rows; y++) {
         if (y === wy && t > 0.45) {
-          const shown = Math.min(word.length, Math.floor((t - 0.45) / 0.05));
-          html += esc(grid[y].slice(0, wx).join('')) + lit(word.slice(0, shown).padEnd(word.length)) + esc(grid[y].slice(wx + word.length).join(''));
-        } else html += esc(grid[y].join(''));
+          const shown = Math.min(word.length, Math.floor((t - 0.45) / 0.03));
+          html += bg(grid[y].slice(0, wx).join('')) + lit(word.slice(0, shown).padEnd(word.length)) + bg(grid[y].slice(wx + word.length).join(''));
+        } else html += bg(grid[y].join(''));
         html += '\n';
       }
       fx.className = 'center';
+      fx.style.setProperty('--bg-dim', String(1 - 0.7 * Math.min(1, Math.max(0, (t - 0.45) / 0.25))));
       fx.innerHTML = html;
     });
   },
