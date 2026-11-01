@@ -10,6 +10,10 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;background:rep
 .crt{height:100%;overflow:hidden;display:grid;grid-template-rows:auto auto 1fr auto;background:radial-gradient(ellipse at center,#111a13 0%,var(--bg) 70%,#000 100%);padding:18px 40px 14px;gap:0;text-shadow:0 0 6px rgba(140,255,122,.6)}
 .bar{display:flex;justify-content:space-between;font-size:22px;color:var(--dim);border-bottom:1px solid var(--faint);padding-bottom:6px}
 .bar b{color:var(--fg)}
+/* Полоска секторов: по ячейке на уровень, пройденные жёлтые, текущий зелёный. Весь путь игры одним взглядом. */
+.bar .sectors{margin-left:1.5em;letter-spacing:.15em}
+.bar .sectors .done{color:var(--amber)}
+.bar .sectors .cur{color:var(--fg)}
 .bar .access{color:var(--amber);font-size:44px}
 .bar .access b{color:var(--fg);display:inline-block}
 .bar .access b.pulse{animation:pulse .3s ease-out}
@@ -87,7 +91,7 @@ body.accepting .cur{visibility:hidden}
 #login{font-size:72px}
 </style></head><body>
 <div class="crt" id="game">
- <div class="bar"><span><b>ПАРОЛИ</b> v0.1 · tty1</span><span>УРОВЕНЬ <b id="lvl">1</b> · <span class="access">ДОСТУП <b id="done">0</b>/<b id="total">6</b></span></span></div>
+ <div class="bar"><span><b>ПАРОЛИ</b> v0.1 · tty1 <span class="sectors" id="sectors"></span></span><span>УРОВЕНЬ <b id="lvl">1</b> · <span class="access">ДОСТУП <b id="done">0</b>/<b id="total">6</b></span></span></div>
  <div class="entry">
   <div class="input"><span class="p">&gt;</span> <span id="typed"></span><span class="slot"><span class="hint" id="hint"></span><span class="cur" id="cur"></span></span></div>
   <div class="speak" id="speak"><svg class="ico" viewBox="0 0 12 12" shape-rendering="crispEdges" fill="currentColor" aria-hidden="true"><rect x="7" y="0" width="1" height="1"/><rect x="6" y="1" width="2" height="1"/><rect x="5" y="2" width="1" height="1"/><rect x="7" y="2" width="1" height="1"/><rect x="10" y="2" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="11" y="3" width="1" height="1"/><rect x="0" y="4" width="2" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="7" y="4" width="1" height="1"/><rect x="11" y="4" width="1" height="1"/><rect x="0" y="5" width="1" height="1"/><rect x="2" y="5" width="2" height="1"/><rect x="7" y="5" width="1" height="1"/><rect x="11" y="5" width="1" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="2" y="6" width="2" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="11" y="6" width="1" height="1"/><rect x="0" y="7" width="2" height="1"/><rect x="3" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/><rect x="11" y="7" width="1" height="1"/><rect x="4" y="8" width="1" height="1"/><rect x="7" y="8" width="1" height="1"/><rect x="11" y="8" width="1" height="1"/><rect x="5" y="9" width="1" height="1"/><rect x="7" y="9" width="1" height="1"/><rect x="10" y="9" width="1" height="1"/><rect x="6" y="10" width="2" height="1"/><rect x="7" y="11" width="1" height="1"/></svg><span class="wave" id="wave">▁▁▁▁▁▁▁▁▁</span> <span id="speakText"></span></div>

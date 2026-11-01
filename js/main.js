@@ -44,6 +44,7 @@ function render() {
   $('done').textContent = word;
   $('total').textContent = LEVELS[level].length;
   $('typed').textContent = typed.toUpperCase();
+  $('sectors').innerHTML = LEVELS.map((_, i) => i < level ? '<span class="done">■</span>' : i === level ? '<span class="cur">▣</span>' : '□').join('');
   netmap.update(level >= NETMAP_FROM, word, LEVELS[level].length);
   scope.update(level >= SCOPE_FROM);
   const show = wrong >= HINT_AFTER && typed.length < target().length;
@@ -130,6 +131,27 @@ function okLine(text) {
   $('log').appendChild(d);
   trimLog();
 }
+// Лог-бегунок: раз в 5–10 с в лог падает служебная строка, чтобы экран жил и на ранних уровнях (IDEAS.md).
+const TICKER = [
+  () => `[ OK ] порт ${[22, 80, 443, 8080, 1337, 3000][rnd(6)]} ............. открыт`,
+  () => `[ -- ] сканирую сектор ${1 + rnd(9)}`,
+  () => `[ OK ] узел 10.0.${rnd(9)}.${1 + rnd(99)} .......... на связи`,
+  () => `[ -- ] пакетов ................ ${100 + rnd(900)}`,
+  () => `[ OK ] ключ ${rnd(0xffff).toString(16).padStart(4, '0').toUpperCase()} ............... принят`,
+  () => `[ -- ] шифр .................... ${['AES', 'RSA', 'XOR'][rnd(3)]}`,
+  () => `[ OK ] антенна ................ наведена`,
+  () => `[ -- ] жду сигнал...`,
+  () => `[ OK ] память .................. ${rnd(64)} КБ свободно`,
+];
+const rnd = n => Math.floor(Math.random() * n);
+let tickerTimer = null;
+function tickerNext() {
+  tickerTimer = setTimeout(() => {
+    if (scene === 'playing') sysLine(TICKER[rnd(TICKER.length)]());
+    tickerNext();
+  }, 5000 + rnd(5000));
+}
+
 function trimLog() {
   const log = $('log');
   while (log.children.length > 9) log.removeChild(log.firstChild);
@@ -305,6 +327,7 @@ function begin() {
   } catch (e) { audioCtx = null; }
   $('login').classList.remove('on');
   fxSfx.preload();
+  tickerNext();
   netmap.mount($('net'));
   scope.mount($('scope'));
   scene = 'playing';
