@@ -15,7 +15,7 @@ const norm = s => s.toLowerCase().replace(/ё/g, 'е');
 
 let scene = 'login';
 let level = 0, word = 0, typed = '', wrong = 0;
-let menuSel = 0, nextTimer = null, fxRun = 0;
+let menuSel = 0, nextTimer = null, fxRun = 0, skippable = false;
 let audioCtx = null, voice = null;
 
 function levelFromHash() {
@@ -58,11 +58,14 @@ function fit() {
   const need = measure(target(), start);
   if (need > max) box.style.fontSize = Math.floor(start * max / need) + 'px';
 }
+// Ширина строки с полным словом и курсором: правый край слота минус левый край строки.
+// scrollWidth блока тут не годится: он никогда не меньше clientWidth, и строка ужималась бы всегда.
 function measure(text, px) {
   const el = $('typed');
   const saved = el.textContent;
   el.textContent = text.toUpperCase();
-  const w = el.parentElement.scrollWidth + px * 1.2;
+  const box = el.parentElement;
+  const w = box.lastElementChild.getBoundingClientRect().right - box.getBoundingClientRect().left + px * 0.1;
   el.textContent = saved;
   return w;
 }
@@ -100,7 +103,6 @@ const sfx = {
   key: () => beep(1200, 40, 'square', 0.025),
   full: () => { beep(880, 60, 'square', 0.03); setTimeout(() => beep(1320, 90, 'square', 0.03), 60); },
   reject: () => beep(110, 90, 'triangle', 0.12),
-  access: () => { beep(660, 90); setTimeout(() => beep(990, 160), 90); },
   granted: () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 180), i * 120)),
 };
 
@@ -123,7 +125,7 @@ function speak() {
 
 function startLevel(n, w = 0) {
   clearTimeout(nextTimer);
-  fxRun++;
+  fxRun++; skippable = false;
   document.body.classList.remove('accepting');
   $('win').className = 'win';
   if (voice) { voice.pause(); voice = null; }
@@ -148,24 +150,38 @@ function reject() {
 
 function accept() {
   scene = 'accepting';
+  if (voice) { voice.pause(); voice = null; $('speak').classList.remove('on'); }
   $('typed').classList.add('won');
   status('');
   document.body.classList.add('accepting');
-  const run = ++fxRun, alive = () => run === fxRun;
-  // Уровень перезапустили во время сценки: цепочка обрывается, startLevel уже прибрал окно.
-  const step = f => () => alive() ? f() : new Promise(() => {});
+  const [alive, step] = newRun();
   const effect = pickEffect();
   openWin()
-    .then(step(() => effect.run({ fx: $('fx'), word: target(), alive, sfx: fxSfx })))
+    .then(step(() => { skippable = true; return effect.run({ fx: $('fx'), word: target(), alive, sfx: fxSfx }); }))
     .then(step(() => wait(effect.hold)))
-    .then(step(() => { fxSfx.play('access'); return wait(250); }))
-    .then(step(closeWin))
-    .then(step(accepted));
+    .then(step(() => finishScene(step)));
+}
+// Уровень перезапустили во время сценки (или сценку пропустили клавишей): fxRun сменился,
+// кадры останавливаются, а цепочка обещаний обрывается на ближайшем шаге.
+function newRun() {
+  const run = ++fxRun, alive = () => run === fxRun;
+  return [alive, f => () => alive() ? f() : new Promise(() => {})];
+}
+function finishScene(step) {
+  skippable = false;
+  fxSfx.play('access');
+  return wait(250).then(step(closeWin)).then(step(accepted));
+}
+// Ребёнок хочет печатать дальше, а не смотреть: любая клавиша во время сценки закрывает окно.
+function skipScene() {
+  if (!skippable) return;
+  const [, step] = newRun();
+  finishScene(step);
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
 function openWin() {
   const w = $('win');
-  $('fx').textContent = ''; $('fx').className = ''; $('fx').style.fontSize = '';
+  $('fx').textContent = ''; $('fx').className = ''; $('fx').removeAttribute('style');
   w.className = 'win on opening';
   fxSfx.play('win-open');
   return wait(280).then(() => { w.className = 'win on ready'; });
@@ -212,7 +228,7 @@ function onPlayingKey(e) {
   if (e.key === 'Escape') { openMenu('pause'); return; }
   if (e.key === 'Enter') { if (typed === target()) accept(); else speak(); return; }
   if (e.key === 'Backspace') { typed = typed.slice(0, -1); wrong = 0; render(); return; }
-  if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) typeChar(LAYOUT[e.code] && /[a-z\[\];',.`]/i.test(e.key) ? LAYOUT[e.code] : e.key);
+  if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) typeChar(LAYOUT[e.code] && /^[\x21-\x7e]$/.test(e.key) ? LAYOUT[e.code] : e.key);
 }
 
 function openMenu(id) {
@@ -251,17 +267,21 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Tab' || e.key === 'F5' || e.metaKey || e.ctrlKey) return;
   e.preventDefault();
   if (e.repeat) return;
-  if (scene === 'login') begin();
+  if (scene === 'login') { if (e.key !== 'Escape') begin(); }
   else if (scene === 'playing') onPlayingKey(e);
+  else if (scene === 'accepting') skipScene();
   else if (scene === 'pause') onMenuKey(e, 'pause', [() => { scene = 'playing'; }, () => { scene = 'playing'; startLevel(level); }]);
 });
 document.addEventListener('mousedown', () => { if (scene === 'login') begin(); });
 // Родитель может набрать #level=N в той же вкладке, в том числе с финального экрана и из паузы.
+// Свои replaceState событие не дают, так что любой hashchange — от человека, в том числе тот же уровень заново.
 window.addEventListener('hashchange', () => {
-  if (!['playing', 'accepting', 'pause', 'final'].includes(scene) || levelFromHash() === level) return;
-  $('pause').classList.remove('on'); $('final').classList.remove('on'); document.body.classList.remove('final');
+  if (!['playing', 'accepting', 'pause', 'granted', 'final'].includes(scene)) return;
+  for (const id of ['pause', 'granted', 'final']) $(id).classList.remove('on');
+  document.body.classList.remove('final');
   scene = 'playing';
-  startLevel(levelFromHash());
+  const lvl = levelFromHash();
+  startLevel(lvl, wordFromHash(lvl));
 });
 window.addEventListener('resize', () => { if (scene !== 'login') render(); });
 

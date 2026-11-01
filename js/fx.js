@@ -20,7 +20,7 @@ function animate(ms, alive, frame) {
     let last = t0;
     (function tick(now) {
       if (!alive()) return;
-      const t = Math.min(1, (now - t0) / ms);
+      const t = Math.min(1, Math.max(0, (now - t0) / ms));
       frame(t, (now - last) / 16.7);
       last = now;
       if (t < 1) requestAnimationFrame(tick); else resolve();
@@ -72,7 +72,7 @@ const RAIN = {
     let nextDrop = 0, chord = false;
     const drops = [];
     for (let x = 0; x < cols; x++) for (let k = 0; k < 2; k++) drops.push({ x, y: -rnd(rows * 2), v: 0.25 + Math.random() * 0.25 });
-    const word = ' ДОСТУП РАЗРЕШЁН ', wx = Math.floor((cols - word.length) / 2), wy = 3;
+    const word = '  ДОСТУП РАЗРЕШЁН  ', wx = Math.floor((cols - word.length) / 2), wy = 3;
     const bg = s => `<span class="bg">${esc(s)}</span>`;
     return animate(RAIN.ms, alive, (t, dt) => {
       if (t < 0.45 && t >= nextDrop) { nextDrop = t + 0.04 + Math.random() * 0.05; sfx.playVar('drop', 3); }
@@ -84,6 +84,8 @@ const RAIN = {
         for (let k = 0; k < 4; k++) { const y = Math.floor(d.y) - k; if (y >= 0 && y < rows) grid[y][d.x] = k === 0 ? glyph() : grid[y][d.x] === ' ' ? glyph() : grid[y][d.x]; }
       }
       let html = '';
+      // Над фразой и под ней дождь не идёт, чтобы знаки не прилипали к буквам.
+      if (t > 0.45) for (const y of [wy - 1, wy + 1]) grid[y].fill(' ', wx, wx + word.length);
       for (let y = 0; y < rows; y++) {
         if (y === wy && t > 0.45) {
           const shown = Math.min(word.length, Math.floor((t - 0.45) / 0.03));
@@ -92,7 +94,7 @@ const RAIN = {
         html += '\n';
       }
       fx.className = 'center';
-      fx.style.setProperty('--bg-dim', String(1 - 0.7 * Math.min(1, Math.max(0, (t - 0.45) / 0.25))));
+      fx.style.setProperty('--bg-dim', String(1 - 0.85 * Math.min(1, Math.max(0, (t - 0.45) / 0.25))));
       fx.innerHTML = html;
     });
   },
@@ -105,6 +107,8 @@ const TYPE = {
     const lines = [`пароль ......... ${word.toUpperCase()}`, 'проверка ....... да', 'замок .......... открыт'];
     const total = lines.reduce((s, l) => s + l.length + 1, 0);
     let typed = 0, ended = 0;
+    // Ширина блока фиксирована по самой длинной строке: иначе центровка тянет текст влево с каждой буквой.
+    fx.style.width = (Math.max(...lines.map(l => l.length)) + 1) + 'ch';
     return animate(TYPE.ms, alive, t => {
       const n = Math.floor(t * total);
       let left = n, out = [], full = 0;
@@ -112,12 +116,12 @@ const TYPE = {
       if (n > typed) { typed = n; if (out[out.length - 1].slice(-1).trim()) sfx.playVar('key', 3); }
       if (full > ended) { ended = full; sfx.play('carriage'); }
       fx.className = '';
-      fx.innerHTML = '\n' + out.map((l, i) => i === 2 && t >= 1 ? lit(l) : esc(l)).join('\n') + (t < 1 ? '_' : '');
+      fx.innerHTML = out.map((l, i) => i === 2 && t >= 1 ? lit(l) : esc(l)).join('\n') + (t < 1 ? '_' : '');
     });
   },
 };
 
-// Hex-дамп: короткие строки с кодами бегут вверх, под ними проступает само слово.
+// Hex-дамп: короткие строки с кодами бегут вверх, под ними проступает само слово, коды при этом гаснут.
 const HEX = {
   ms: 2000, hold: 800,
   run: ({ fx, word, alive, sfx = quiet }) => {
@@ -131,7 +135,9 @@ const HEX = {
       while (shown < want) { lines.push(row(4 + shown)); lines.shift(); shown++; sfx.playVar('tick', 3); }
       if (t > 0.6 && !ding) { ding = true; sfx.play('ding'); }
       fx.className = 'center';
-      fx.innerHTML = esc(lines.join('\n')) + '\n\n' + (t > 0.6 ? `<span class="lit"><span class="bars">${esc(word.toUpperCase())}</span>  OK</span>` : '');
+      fx.style.setProperty('--bg-dim', String(1 - 0.75 * Math.min(1, Math.max(0, (t - 0.6) / 0.25))));
+      // Строка со словом в разметке с первого кадра, до поры невидимая: иначе блок подрастает и прыгает вверх.
+      fx.innerHTML = `<span class="bg">${esc(lines.join('\n'))}</span>\n\n<span class="lit"${t > 0.6 ? '' : ' style="visibility:hidden"'}><span class="bars">${esc(word.toUpperCase())}</span>  OK</span>`;
     });
   },
 };

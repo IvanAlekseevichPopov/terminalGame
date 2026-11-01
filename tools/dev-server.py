@@ -11,4 +11,4 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
 
 
 port = int(sys.argv[1]) if len(sys.argv) > 1 else 8125
-http.server.ThreadingHTTPServer(('', port), NoCacheHandler).serve_forever()
+http.server.ThreadingHTTPServer(('127.0.0.1', port), NoCacheHandler).serve_forever()
