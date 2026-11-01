@@ -24,44 +24,6 @@ function animate(ms, alive, frame) {
   });
 }
 
-// Сейф: диск крутится, щелчок, дверца распахивается, внутри звёзды.
-const SAFE = {
-  ms: 2400, hold: 700,
-  run: ({ fx, alive }) => {
-    const dial = '\\|/-';
-    const closed = d => [
-      '╔════════════════╗',
-      '║ ┌────────────┐ ║',
-      `║ │   (${d})   ▐▐ │ ║`,
-      '║ │   ───   ▐▐ │ ║',
-      '║ └────────────┘ ║',
-      '╚════════════════╝',
-    ].join('\n');
-    const ajar = [
-      '╔════════════════╗',
-      '║█               ║',
-      '║█      ★        ║',
-      '║█               ║',
-      '║█               ║',
-      '╚════════════════╝',
-    ].join('\n');
-    const open = [
-      '╔════════════════╗',
-      '║███   ★    ★    ║',
-      '║███ ★    ★   ★  ║',
-      '║███   ★  ★      ║',
-      '║███      ★      ║',
-      '╚════════════════╝',
-    ].join('\n');
-    return animate(SAFE.ms, alive, t => {
-      fx.className = 'center big';
-      if (t < 0.6) fx.textContent = closed(dial[Math.floor(t * 24) % 4]);
-      else if (t < 0.72) fx.innerHTML = lit(ajar);
-      else fx.innerHTML = lit(open);
-    });
-  },
-};
-
 // Расшифровка: буквы слова мелькают случайными знаками и по одной застывают слева направо.
 const DECODE = {
   ms: 3200, hold: 600,
@@ -158,7 +120,7 @@ const HEX = {
   },
 };
 
-export const EFFECTS = [SAFE, DECODE, BAR, RAIN, TYPE, HEX];
+export const EFFECTS = [DECODE, BAR, RAIN, TYPE, HEX];
 
 let last = -1;
 export function pickEffect() {
