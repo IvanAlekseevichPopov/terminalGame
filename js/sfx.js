@@ -9,11 +9,19 @@ export function preload() {
   for (const n of NAMES) { const a = new Audio(src(n)); a.preload = 'auto'; cache[n] = a; }
 }
 
-export function play(name, volume = 1) {
+const playing = new Set();
+export function play(name) {
   const base = cache[name] ?? (cache[name] = new Audio(src(name)));
   const a = base.cloneNode();
-  a.volume = volume;
-  a.play().catch(() => {});
+  playing.add(a);
+  a.onended = () => playing.delete(a);
+  a.play().catch(() => playing.delete(a));
+}
+
+// Сценку пропустили или уровень перезапустили: длинные звуки (полоса, фанфара) не должны доигрывать.
+export function stopAll() {
+  for (const a of playing) { a.pause(); }
+  playing.clear();
 }
 
 // Случайный из вариантов: tick/tick2/tick3, чтобы частые повторы не звучали пулемётом.

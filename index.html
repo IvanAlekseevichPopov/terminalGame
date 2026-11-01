@@ -60,7 +60,12 @@ body.final .cur{display:none}
 /* Черты по высоте заглавных: символ | в шрифте выше букв и уходит под строку. */
 #fx .bars{display:inline-block;line-height:.9;padding:0 .3em;border-left:.09em solid currentColor;border-right:.09em solid currentColor}
 body.accepting .cur{visibility:hidden}
-.log{font-size:36px;line-height:1.5;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:14px}
+.low{display:flex;align-items:flex-end;overflow:hidden;min-height:0}
+.log{flex:1;font-size:36px;line-height:1.5;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:14px;min-width:0}
+/* Карта сети (js/netmap.js), с 5 уровня; на ранних уровнях пустая. */
+.net{margin:0 0 14px;font-size:22px;line-height:1.25;color:var(--dim);white-space:pre}
+.net .lit{color:var(--amber)}
+.net .pk{color:#d9ffd0}
 .log .sys{color:var(--dim);font-size:20px}
 .log .ok::before{content:"✓ ";color:var(--amber)}
 .foot{display:flex;justify-content:space-between;font-size:24px;color:var(--dim);border-top:1px solid var(--faint);padding-top:6px}
@@ -79,7 +84,7 @@ body.accepting .cur{visibility:hidden}
   <div class="input"><span class="p">&gt;</span> <span id="typed"></span><span class="slot"><span class="hint" id="hint"></span><span class="cur" id="cur"></span></span></div>
   <div class="speak" id="speak"><span class="ico">♪</span><span class="wave">▁▃▅▇▅▃▁</span> <span id="speakText">слушай…</span></div>
  </div>
- <div class="log" id="log"></div>
+ <div class="low"><div class="log" id="log"></div><pre class="net" id="net"></pre></div>
  <div class="foot"><span id="sys1">root@tty1</span><span id="clock">00:00:00</span><span style="color:var(--fg);opacity:.6">Esc — пауза</span></div>
 </div>
 <div class="win" id="win"><div class="winbox"><div class="wintitle">■ ПРОВЕРКА ПАРОЛЯ · <b>ДОСТУП</b></div><pre id="fx"></pre></div></div>

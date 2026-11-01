@@ -37,11 +37,14 @@ const DECODE = {
     fx.className = 'center huge';
     // Длинная фраза ужимается под ширину окна: 14vh — потолок, 70vw — ширина окна.
     fx.style.fontSize = `min(14vh, ${(70 / (w.length * 0.64)).toFixed(1)}vw)`;
+    // Длительность от длины слова: «3» расшифровывается за секунду, фраза — за три; иначе на коротком
+    // слове цифра застывала на полпути, а тики бежали ещё полторы секунды в пустоту.
+    const ms = Math.min(DECODE.ms, 700 + 320 * w.length);
     let noise = '', step = -1, lastFixed = 0, done = false;
-    return animate(DECODE.ms, alive, t => {
+    return animate(ms, alive, t => {
       const fixed = Math.floor(t * (w.length + 1));
-      const now = Math.floor(t * DECODE.ms / DECODE.tick);
-      if (now !== step) { step = now; noise = [...w].map(() => glyph()).join(''); if (now % 3 === 0 && t < 1) sfx.playVar('tick', 3); }
+      const now = Math.floor(t * ms / DECODE.tick);
+      if (now !== step) { step = now; noise = [...w].map(() => glyph()).join(''); if (now % 3 === 0 && fixed < w.length) sfx.playVar('tick', 3); }
       if (fixed > lastFixed) { lastFixed = fixed; if (fixed <= w.length && w[fixed - 1] !== ' ') sfx.play('chirp' + (1 + Math.floor((fixed - 1) / w.length * 5))); }
       const text = [...w].map((c, i) => i < fixed || c === ' ' ? c : noise[i]).join('');
       fx.innerHTML = t >= 1 ? lit(text) : esc(text);

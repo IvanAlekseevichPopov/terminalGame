@@ -1,8 +1,10 @@
 import { LEVELS, NAMES } from '../levels.js';
 import { pickEffect, GATE } from './fx.js';
 import * as fxSfx from './sfx.js';
+import * as netmap from './netmap.js';
 
 const HINT_AFTER = 3;
+const NETMAP_FROM = 4; // индекс уровня, с которого видна карта сети (5-й)
 const NEXT_WORD_MS = 150;
 
 const $ = id => document.getElementById(id);
@@ -37,6 +39,7 @@ function render() {
   $('done').textContent = word;
   $('total').textContent = LEVELS[level].length;
   $('typed').textContent = typed.toUpperCase();
+  netmap.update(level >= NETMAP_FROM, word, LEVELS[level].length);
   const show = wrong >= HINT_AFTER && typed.length < target().length;
   const next = show ? target()[typed.length] : '';
   $('hint').textContent = next === ' ' ? '␣' : next.toUpperCase();
@@ -124,6 +127,7 @@ function speak() {
 function startLevel(n, w = 0) {
   clearTimeout(nextTimer);
   fxRun++; skippable = false;
+  fxSfx.stopAll();
   document.body.classList.remove('accepting');
   $('win').className = 'win';
   if (voice) { voice.pause(); voice = null; }
@@ -174,6 +178,7 @@ function finishScene(step) {
 function skipScene() {
   if (!skippable) return;
   const [, step] = newRun();
+  fxSfx.stopAll();
   finishScene(step);
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -254,6 +259,7 @@ function begin() {
   } catch (e) { audioCtx = null; }
   $('login').classList.remove('on');
   fxSfx.preload();
+  netmap.mount($('net'));
   scene = 'playing';
   const lvl = levelFromHash();
   startLevel(lvl, wordFromHash(lvl));
