@@ -18,7 +18,8 @@ const norm = s => s.toLowerCase().replace(/ё/g, 'е');
 
 let scene = 'login';
 let level = 0, word = 0, typed = '', wrong = 0;
-let menuSel = 0, nextTimer = null, fxRun = 0, skippable = false;
+let menuSel = 0, nextTimer = null, fxRun = 0, skippable = false, newSector = false;
+let voiceEl = null, voiceGen = 0;
 let audioCtx = null, voice = null;
 
 function levelFromHash() {
@@ -44,7 +45,8 @@ function render() {
   $('done').textContent = word;
   $('total').textContent = LEVELS[level].length;
   $('typed').textContent = typed.toUpperCase();
-  $('sectors').innerHTML = LEVELS.map((_, i) => i < level ? '<span class="done">■</span>' : i === level ? '<span class="now">■</span>' : '□').join('');
+  $('sectors').innerHTML = LEVELS.map((_, i) => i < level ? `<span class="done${newSector && i === level - 1 ? ' new' : ''}">■</span>` : i === level ? '<span class="now">■</span>' : '□').join('');
+  newSector = false;
   netmap.update(level >= NETMAP_FROM, word, LEVELS[level].length);
   scope.update(level >= SCOPE_FROM);
   const show = wrong >= HINT_AFTER && typed.length < target().length;
@@ -152,9 +154,10 @@ function tickerNext() {
   }, 5000 + rnd(5000));
 }
 
+// Лог не длиннее 9 строк; первыми уходят служебные, «✓ СЛОН» ребёнка держатся дольше всех.
 function trimLog() {
   const log = $('log');
-  while (log.children.length > 9) log.removeChild(log.firstChild);
+  while (log.children.length > 9) log.removeChild(log.querySelector('.sys') ?? log.firstChild);
 }
 
 // Все звуки — файлы из audio/sfx (sfx.js); AudioContext нужен только эквалайзеру.
@@ -164,21 +167,24 @@ const sfx = {
   reject: () => fxSfx.play('reject'),
 };
 
+// Один <audio> на все слова: к анализатору элемент подключается один раз, иначе каждое слово
+// оставляло бы в памяти свой медиаплеер. Поколение gen отсекает колбэки от предыдущего слова.
 function speak() {
-  if (voice) { voice.pause(); voice = null; }
-  const a = new Audio(`audio/${encodeURIComponent(target())}.m4a`);
+  const a = voiceEl, gen = ++voiceGen;
+  a.pause();
+  a.src = `audio/${encodeURIComponent(target())}.m4a`;
   voice = a;
-  eqAttach(a);
   $('speak').classList.add('on');
   status('');
   $('typed').classList.remove('won');
   const done = () => {
-    if (voice !== a) return;
+    if (gen !== voiceGen || voice !== a) return;
     voice = null;
     $('speak').classList.remove('on');
     render();
   };
   a.onended = a.onerror = done;
+  if (audioCtx && audioCtx.state !== 'running') audioCtx.resume().catch(() => {});
   a.play().then(eqStart).catch(done);
 }
 
@@ -217,8 +223,9 @@ function accept() {
   document.body.classList.add('accepting');
   const [alive, step] = newRun();
   const effect = pickEffect();
-  openWin()
-    .then(step(() => { skippable = true; return effect.run({ fx: $('fx'), word: target(), alive, sfx: fxSfx }); }))
+  openWin('', alive)
+    // Пропуск включается не сразу: второй Enter сгоряча не должен убивать награду.
+    .then(step(() => { wait(700).then(() => { if (alive()) skippable = true; }); return effect.run({ fx: $('fx'), word: target(), alive, sfx: fxSfx }); }))
     .then(step(() => wait(effect.hold)))
     .then(step(() => finishScene(step)));
 }
@@ -241,13 +248,15 @@ function skipScene() {
   finishScene(step);
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
-function openWin(kind = '') {
+function openWin(kind, alive, title = '■ ПРОВЕРКА ПАРОЛЯ · <b>ДОСТУП</b>') {
   const w = $('win');
   $('fx').textContent = ''; $('fx').className = ''; $('fx').removeAttribute('style');
   w.firstElementChild.classList.remove('shake');
+  w.querySelector('.wintitle').innerHTML = title;
   w.className = `win on opening ${kind}`;
   fxSfx.play('win-open');
-  return wait(280).then(() => { w.className = `win on ready ${kind}`; });
+  // Если за 0,28 с уровень перезапустили, окно не должно «дооткрыться» поверх нового.
+  return wait(280).then(() => { if (alive()) w.className = `win on ready ${kind}`; });
 }
 function closeWin() {
   const w = $('win');
@@ -267,13 +276,14 @@ function accepted() {
   // Конец уровня: сцена ворот во весь экран, потом следующий уровень или финал.
   scene = 'granted';
   const [alive, step] = newRun();
-  openWin('full')
-    .then(step(() => GATE.run({ fx: $('fx'), level: level + 1, name: NAMES[level], alive, sfx: fxSfx, win: $('win') })))
+  const next = level + 1 < LEVELS.length ? `уровень ${level + 2} открыт` : 'доступ полный';
+  openWin('full', alive, `■ ВЗЛОМ · <b>УРОВЕНЬ ${level + 1}</b>`)
+    .then(step(() => GATE.run({ fx: $('fx'), level: level + 1, name: NAMES[level], next, alive, sfx: fxSfx, win: $('win') })))
     .then(step(() => wait(300)))
     .then(step(closeWin))
     .then(step(() => {
-      if (level + 1 < LEVELS.length) { scene = 'playing'; startLevel(level + 1); }
-      else { scene = 'final'; $('final').classList.add('on'); document.body.classList.add('final'); }
+      if (level + 1 < LEVELS.length) { scene = 'playing'; newSector = true; startLevel(level + 1); }
+      else { scene = 'final'; $('final').classList.add('on'); document.body.classList.add('final'); netmap.stop(); scope.update(false); }
     }));
 }
 
@@ -319,6 +329,8 @@ function begin() {
   } catch (e) { audioCtx = null; }
   $('login').classList.remove('on');
   fxSfx.preload();
+  voiceEl = new Audio(); voiceEl.preload = 'auto';
+  eqAttach(voiceEl);
   tickerNext();
   netmap.mount($('net'));
   scope.mount($('scope'));

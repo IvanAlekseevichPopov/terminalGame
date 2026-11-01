@@ -35,7 +35,7 @@ async function play(effect, withWindow, full = false) {
   const kind = full ? ' full' : '';
   if (withWindow) { w.className = 'win on opening' + kind; sfx.play('win-open'); await wait(280); if (!alive()) return; }
   w.className = 'win on ready' + kind;
-  if (effect) await effect.run({ fx, word: $('word').value, level: 2, name: 'ангар', win: w, alive, sfx });
+  if (effect) await effect.run({ fx, word: $('word').value, level: 2, name: 'ангар', next: 'уровень 3 открыт', win: w, alive, sfx });
   if (!withWindow || !alive()) return;
   await wait(effect?.hold ?? 400); if (!alive()) return;
   sfx.play('access'); await wait(250); if (!alive()) return;

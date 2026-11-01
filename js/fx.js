@@ -152,7 +152,7 @@ export const EFFECTS = [DECODE, BAR, RAIN, TYPE, HEX];
 // Ребёнок-ревьюер: не «сектор», а «уровень», без слова «закрыто» (похоже на проигрыш), взрыв во все стороны.
 export const GATE = {
   ms: 4200,
-  run: ({ fx, level, name, alive, sfx = quiet, win }) => {
+  run: ({ fx, level, name, next, alive, sfx = quiet, win }) => {
     const W = 50, H = 13, gw = 26, gh = 7, gx = (W - gw) / 2, gy = 2;
     const label = ` УРОВЕНЬ ${level} `;
     const gate = Array.from({ length: gh }, (_, y) => {
@@ -196,8 +196,10 @@ export const GATE = {
       }
       if (phase === 1) { phase = 2; sfx.play('fanfare'); }
       const k = (t - T2) / (1 - T2);
-      fx.innerHTML = `\n<span class="lit" style="font-size:2.6em;line-height:1.2">${esc(name.toUpperCase())}</span>\n\n`
-        + (k > 0.3 ? esc(`уровень ${level} открыт`) : ' ');
+      // Имя уровня во всю ширину окна: короткое «ЯДРО» так же крупно, как «ЛАБОРАТОРИЯ».
+      const size = `min(22vh, ${(80 / (name.length * 0.62)).toFixed(1)}vw)`;
+      fx.innerHTML = `\n<span class="lit" style="font-size:${size};line-height:1.2">${esc(name.toUpperCase())}</span>\n\n`
+        + (k > 0.3 ? esc(next) : ' ');
     });
   },
 };

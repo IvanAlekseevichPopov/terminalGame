@@ -40,12 +40,15 @@ export function mount(element) { el = element; }
 export function update(shown, done, total) {
   if (!el) return;
   if (!shown) { stop(); return; }
+  const was = captured;
   captured = Math.min(NODES.length, Math.round(done / total * NODES.length));
+  // Последний пароль уровня: вся сеть захвачена, узлы вспыхивают перед воротами («сеть твоя»).
+  el.classList.toggle('full', captured === NODES.length && (was < NODES.length || el.classList.contains('full')));
   if (!timer) { packets = []; timer = setInterval(frame, 80); frame(); }
 }
 export function stop() {
   clearInterval(timer); timer = null;
-  if (el) el.textContent = '';
+  if (el) { el.textContent = ''; el.classList.remove('full'); }
 }
 
 function frame() {
