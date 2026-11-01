@@ -1,4 +1,4 @@
-import { LEVELS, NAMES } from '../levels.js';
+import { LEVELS, NAMES, ALIASES } from '../levels.js';
 import { pickEffect, GATE } from './fx.js';
 import * as fxSfx from './sfx.js';
 import * as netmap from './netmap.js';
@@ -35,6 +35,9 @@ function wordFromHash(lvl) {
 function saveProgress() { history.replaceState(null, '', `#level=${level + 1}&word=${word}`); }
 
 function target() { return LEVELS[level][word] ?? ''; }
+// Все написания текущего пароля: само слово и его омофоны из ALIASES.
+function variants() { const t = target(); return t ? [t, ...(ALIASES[t] ?? [])] : []; }
+function isFull(s) { return s.length > 0 && variants().includes(s); }
 
 function render() {
   $('lvl').textContent = level + 1;
@@ -47,7 +50,7 @@ function render() {
   const next = show ? target()[typed.length] : '';
   $('hint').textContent = next === ' ' ? '␣' : next.toUpperCase();
   $('hint').classList.toggle('on', show);
-  const full = typed.length > 0 && typed === target();
+  const full = isFull(typed);
   if (!target()) return;
   $('typed').classList.toggle('full', full);
   if (scene === 'accepting') return fit();
@@ -223,21 +226,21 @@ function accepted() {
 }
 
 function typeChar(ch) {
-  const t = target();
-  if (typed.length >= t.length) return;
+  // Буква верна, если продолжает любое из написаний пароля (код и кот); печатается буква этого написания.
+  const v = variants().find(w => w.startsWith(typed) && typed.length < w.length && norm(ch) === norm(w[typed.length]));
   if (ch === ' ' && (typed.length === 0 || typed.endsWith(' '))) return;
-  if (norm(ch) === norm(t[typed.length])) {
-    typed += t[typed.length];
+  if (v) {
+    typed += v[typed.length];
     wrong = 0;
     scope.pulse('ok');
-    if (typed === t) sfx.full(); else sfx.key();
+    if (isFull(typed)) sfx.full(); else sfx.key();
     render();
-  } else reject();
+  } else if (typed.length < target().length) reject();
 }
 
 function onPlayingKey(e) {
   if (e.key === 'Escape') { openMenu('pause'); return; }
-  if (e.key === 'Enter') { if (typed === target()) accept(); else speak(); return; }
+  if (e.key === 'Enter') { if (isFull(typed)) accept(); else speak(); return; }
   if (e.key === 'Backspace') { typed = typed.slice(0, -1); wrong = 0; render(); return; }
   if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) typeChar(LAYOUT[e.code] && /^[\x21-\x7e]$/.test(e.key) ? LAYOUT[e.code] : e.key);
 }
