@@ -26,7 +26,7 @@ function animate(ms, alive, frame) {
 
 // Сейф: диск крутится, щелчок, дверца распахивается, внутри звёзды.
 const SAFE = {
-  ms: 2400, hold: 1400,
+  ms: 2400, hold: 700,
   run: ({ fx, alive }) => {
     const dial = '\\|/-';
     const closed = d => [
@@ -64,7 +64,7 @@ const SAFE = {
 
 // Расшифровка: буквы слова мелькают случайными знаками и по одной застывают слева направо.
 const DECODE = {
-  ms: 3200, hold: 1400,
+  ms: 3200, hold: 600,
   tick: 32, // знаки меняются не каждый кадр, а раз в tick мс: быстрее глаз не успевает
   run: ({ fx, word, alive }) => {
     const w = word.toUpperCase();
@@ -84,7 +84,7 @@ const DECODE = {
 
 // Полоса загрузки с процентами и «OK» в конце.
 const BAR = {
-  ms: 2000, hold: 1200,
+  ms: 2000, hold: 600,
   run: ({ fx, alive }) => animate(BAR.ms, alive, t => {
     const p = Math.min(t / 0.8, 1), n = Math.round(p * 26), pct = String(Math.round(p * 100)).padStart(3);
     fx.className = 'center';
@@ -96,7 +96,7 @@ const BAR = {
 
 // Дождь знаков, сквозь который проступает «ДОСТУП РАЗРЕШЁН»; с появлением фразы дождь уходит в тень.
 const RAIN = {
-  ms: 2600, hold: 1400,
+  ms: 2600, hold: 800,
   cols: 36, rows: 6,
   run: ({ fx, alive }) => {
     const { cols, rows } = RAIN;
@@ -128,7 +128,7 @@ const RAIN = {
 
 // Печатная машинка: три строки лога печатаются по букве, простыми словами.
 const TYPE = {
-  ms: 3000, hold: 2200,
+  ms: 3000, hold: 1000,
   run: ({ fx, word, alive }) => {
     const lines = [`пароль ......... ${word.toUpperCase()}`, 'проверка ....... да', 'замок .......... открыт'];
     const total = lines.reduce((s, l) => s + l.length + 1, 0);
@@ -143,7 +143,7 @@ const TYPE = {
 
 // Hex-дамп: короткие строки с кодами бегут вверх, под ними проступает само слово.
 const HEX = {
-  ms: 2000, hold: 1600,
+  ms: 2000, hold: 800,
   run: ({ fx, word, alive }) => {
     const hex = () => rnd(256).toString(16).padStart(2, '0').toUpperCase();
     const row = i => `${(i * 4).toString(16).padStart(4, '0').toUpperCase()}  ${Array.from({ length: 4 }, hex).join(' ')}  |${Array.from({ length: 4 }, glyph).join('')}|`;
