@@ -31,7 +31,8 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;background:rep
 body.final .cur{display:none}
 .input .p{color:var(--amber)}
 .cur{display:inline-block;width:.6em;height:1em;background:var(--fg);vertical-align:-0.12em;animation:b 1s steps(2) infinite;margin-left:6px}
-.cur.shake{animation:sh .18s linear}
+/* Дёргание поверх мигания, не вместо него; класс снимает main.js по animationend, иначе мигание пропадало после первого промаха. */
+.cur.shake{animation:b 1s steps(2) infinite,sh .18s linear}
 @keyframes b{50%{opacity:0}}
 @keyframes sh{0%,100%{transform:translateX(0)}25%{transform:translateX(-.18em)}75%{transform:translateX(.18em)}}
 /* Строка под вводом: эквалайзер под голос (js/main.js, AnalyserNode), а на полном слове — «Enter ⏎» жёлтым.

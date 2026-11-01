@@ -365,6 +365,7 @@ window.addEventListener('hashchange', () => {
   startLevel(lvl, wordFromHash(lvl));
 });
 window.addEventListener('resize', () => { if (scene !== 'login') render(); });
+$('cur').addEventListener('animationend', e => { if (e.animationName === 'sh') e.target.classList.remove('shake'); });
 
 setInterval(() => { $('clock').textContent = new Date().toTimeString().slice(0, 8); }, 1000);
 setInterval(() => { $('sys1').textContent = 'root@tty1 · 0x' + Math.floor(Math.random() * 0xffff).toString(16).padStart(4, '0').toUpperCase(); }, 4000);
