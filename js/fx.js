@@ -88,7 +88,8 @@ const BAR = {
   run: ({ fx, alive }) => animate(BAR.ms, alive, t => {
     const p = Math.min(t / 0.8, 1), n = Math.round(p * 26), pct = String(Math.round(p * 100)).padStart(3);
     fx.className = 'center';
-    fx.innerHTML = `\nпроверка пароля\n\n[${'█'.repeat(n)}${'░'.repeat(26 - n)}] ${pct}%` + (t >= 0.85 ? lit('  OK') : '');
+    // «OK» рядом с заголовком, место под него занято заранее: ни заголовок, ни полоса не прыгают.
+    fx.innerHTML = `проверка пароля` + (t >= 0.85 ? lit('  OK') : '    ') + `\n\n[${'█'.repeat(n)}${'░'.repeat(26 - n)}] ${pct}%`;
   }),
 };
 
