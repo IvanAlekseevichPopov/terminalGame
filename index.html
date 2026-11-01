@@ -44,10 +44,11 @@ body.final .cur{display:none}
 @keyframes wclose{0%{transform:scale(1,1)}55%{transform:scale(1,.015)}100%{transform:scale(0,.015)}}
 .wintitle{font-size:26px;color:var(--dim);border-bottom:1px solid var(--faint);padding:8px 20px;letter-spacing:.1em}
 .wintitle b{color:var(--amber)}
-#fx{margin:auto;font-size:36px;line-height:1.2;color:var(--dim);white-space:pre;max-width:100%}
+/* Размеры сценок от экрана: окно 70vw × 55vh, 6 строк по 36–40 знаков должны влезть. */
+#fx{margin:auto;font-size:5.2vh;line-height:1.15;color:var(--dim);white-space:pre;max-width:100%}
 #fx.center{text-align:center}
-#fx.big{font-size:44px;line-height:1.08}
-#fx.huge{font-size:150px;line-height:1.1}
+#fx.big{font-size:6.6vh;line-height:1.08}
+#fx.huge{font-size:14vh;line-height:1.1}
 #fx .lit{color:var(--amber);text-shadow:0 0 12px rgba(255,194,74,.6)}
 body.accepting .cur{visibility:hidden}
 .log{font-size:36px;line-height:1.5;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:14px}

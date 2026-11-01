@@ -3,7 +3,6 @@ import { pickEffect } from './fx.js';
 
 const HINT_AFTER = 3;
 const NEXT_WORD_MS = 150;
-const HOLD_MS = 400;
 const GRANTED_MS = 2600;
 
 const $ = id => document.getElementById(id);
@@ -155,16 +154,17 @@ function accept() {
   const run = ++fxRun, alive = () => run === fxRun;
   // Уровень перезапустили во время сценки: цепочка обрывается, startLevel уже прибрал окно.
   const step = f => () => alive() ? f() : new Promise(() => {});
+  const effect = pickEffect();
   openWin()
-    .then(step(() => pickEffect().run({ fx: $('fx'), word: target(), alive })))
-    .then(step(() => wait(HOLD_MS)))
+    .then(step(() => effect.run({ fx: $('fx'), word: target(), alive })))
+    .then(step(() => wait(effect.hold)))
     .then(step(closeWin))
     .then(step(accepted));
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
 function openWin() {
   const w = $('win');
-  $('fx').textContent = ''; $('fx').className = '';
+  $('fx').textContent = ''; $('fx').className = ''; $('fx').style.fontSize = '';
   w.className = 'win on opening';
   return wait(280).then(() => { w.className = 'win on ready'; });
 }

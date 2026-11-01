@@ -29,12 +29,12 @@ const names = ['сейф', 'расшифровка', 'полоса', 'дождь
 async function play(effect, withWindow) {
   const my = ++run, alive = () => my === run;
   const w = $('win'), fx = $('fx');
-  fx.textContent = ''; fx.className = '';
+  fx.textContent = ''; fx.className = ''; fx.style.fontSize = '';
   if (withWindow) { w.className = 'win on opening'; await wait(280); if (!alive()) return; }
   w.className = 'win on ready';
   if (effect) await effect.run({ fx, word: $('word').value, alive });
   if (!withWindow || !alive()) return;
-  await wait(400); if (!alive()) return;
+  await wait(effect?.hold ?? 400); if (!alive()) return;
   w.className = 'win on closing'; await wait(180); if (!alive()) return;
   w.className = 'win';
 }

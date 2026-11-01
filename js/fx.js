@@ -1,6 +1,7 @@
 // Сценки принятого пароля: короткие картинки в терминальном стиле, по очереди, чтобы не надоедали.
-// Каждая рисует текстом в #fx внутри окна и обещает закончить за свои ms. Последний кадр
-// держится HOLD_MS, потом main.js закрывает окно.
+// Каждая рисует текстом в #fx внутри окна и обещает закончить за свои ms; последний кадр
+// держится ещё hold, потом main.js закрывает окно. У каждой свои ms и hold: где есть текст,
+// ребёнок должен успеть его прочитать, где картинка — разглядеть.
 // ctx.alive() говорит, что уровень не перезапущен: иначе кадры останавливаются.
 
 const GLYPHS = 'АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЩЭЮЯ0123456789#$%&*+=?@';
@@ -25,7 +26,7 @@ function animate(ms, alive, frame) {
 
 // Сейф: диск крутится, щелчок, дверца распахивается, внутри звёзды.
 const SAFE = {
-  ms: 1400,
+  ms: 2400, hold: 1400,
   run: ({ fx, alive }) => {
     const dial = '\\|/-';
     const closed = d => [
@@ -54,8 +55,8 @@ const SAFE = {
     ].join('\n');
     return animate(SAFE.ms, alive, t => {
       fx.className = 'center big';
-      if (t < 0.5) fx.textContent = closed(dial[Math.floor(t * 20) % 4]);
-      else if (t < 0.65) fx.innerHTML = lit(ajar);
+      if (t < 0.6) fx.textContent = closed(dial[Math.floor(t * 24) % 4]);
+      else if (t < 0.72) fx.innerHTML = lit(ajar);
       else fx.innerHTML = lit(open);
     });
   },
@@ -63,10 +64,12 @@ const SAFE = {
 
 // Расшифровка: буквы слова мелькают случайными знаками и по одной застывают слева направо.
 const DECODE = {
-  ms: 900,
+  ms: 1800, hold: 1400,
   run: ({ fx, word, alive }) => {
     const w = word.toUpperCase();
-    fx.className = 'center ' + (w.length <= 7 ? 'huge' : 'big');
+    fx.className = 'center huge';
+    // Длинная фраза ужимается под ширину окна: 14vh — потолок, 70vw — ширина окна.
+    fx.style.fontSize = `min(14vh, ${(70 / (w.length * 0.64)).toFixed(1)}vw)`;
     return animate(DECODE.ms, alive, t => {
       const fixed = Math.floor(t * (w.length + 1));
       const text = [...w].map((c, i) => i < fixed || c === ' ' ? c : glyph()).join('');
@@ -77,18 +80,18 @@ const DECODE = {
 
 // Полоса загрузки с процентами и «OK» в конце.
 const BAR = {
-  ms: 1000,
+  ms: 2000, hold: 1200,
   run: ({ fx, alive }) => animate(BAR.ms, alive, t => {
-    const p = Math.min(t / 0.8, 1), n = Math.round(p * 32), pct = String(Math.round(p * 100)).padStart(3);
+    const p = Math.min(t / 0.8, 1), n = Math.round(p * 26), pct = String(Math.round(p * 100)).padStart(3);
     fx.className = 'center';
-    fx.innerHTML = `\nпроверка пароля\n\n[${'█'.repeat(n)}${'░'.repeat(32 - n)}] ${pct}%` + (t >= 0.85 ? lit('  OK') : '');
+    fx.innerHTML = `\nпроверка пароля\n\n[${'█'.repeat(n)}${'░'.repeat(26 - n)}] ${pct}%` + (t >= 0.85 ? lit('  OK') : '');
   }),
 };
 
 // Дождь знаков, сквозь который проступает «ДОСТУП».
 const RAIN = {
-  ms: 1200,
-  cols: 40, rows: 6,
+  ms: 2600, hold: 1400,
+  cols: 36, rows: 6,
   run: ({ fx, alive }) => {
     const { cols, rows } = RAIN;
     const drops = [];
@@ -104,7 +107,7 @@ const RAIN = {
       let html = '';
       for (let y = 0; y < rows; y++) {
         if (y === wy && t > 0.45) {
-          const shown = Math.min(word.length, Math.floor((t - 0.45) / 0.06));
+          const shown = Math.min(word.length, Math.floor((t - 0.45) / 0.05));
           html += esc(grid[y].slice(0, wx).join('')) + lit(word.slice(0, shown).padEnd(word.length)) + esc(grid[y].slice(wx + word.length).join(''));
         } else html += esc(grid[y].join(''));
         html += '\n';
@@ -117,7 +120,7 @@ const RAIN = {
 
 // Печатная машинка: три строки лога печатаются по букве, простыми словами.
 const TYPE = {
-  ms: 1200,
+  ms: 3000, hold: 2200,
   run: ({ fx, word, alive }) => {
     const lines = [`пароль ......... ${word.toUpperCase()}`, 'проверка ....... да', 'замок .......... открыт'];
     const total = lines.reduce((s, l) => s + l.length + 1, 0);
@@ -132,7 +135,7 @@ const TYPE = {
 
 // Hex-дамп: короткие строки с кодами бегут вверх, под ними проступает само слово.
 const HEX = {
-  ms: 1000,
+  ms: 2000, hold: 1600,
   run: ({ fx, word, alive }) => {
     const hex = () => rnd(256).toString(16).padStart(2, '0').toUpperCase();
     const row = i => `${(i * 4).toString(16).padStart(4, '0').toUpperCase()}  ${Array.from({ length: 4 }, hex).join(' ')}  |${Array.from({ length: 4 }, glyph).join('')}|`;
@@ -149,9 +152,9 @@ const HEX = {
 
 // Отсчёт: 3, 2, 1 крупно и «ДОСТУП».
 const COUNT = {
-  ms: 1300,
+  ms: 2400, hold: 1200,
   run: ({ fx, alive }) => animate(COUNT.ms, alive, t => {
-    const step = Math.floor(t / 0.3);
+    const step = Math.floor(t / 0.28);
     const text = step < 3 ? String(3 - step) : 'ДОСТУП';
     fx.className = 'center huge';
     fx.innerHTML = step < 3 ? esc(text) : lit(text);
