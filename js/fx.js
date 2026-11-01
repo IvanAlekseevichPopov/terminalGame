@@ -64,15 +64,19 @@ const SAFE = {
 
 // Расшифровка: буквы слова мелькают случайными знаками и по одной застывают слева направо.
 const DECODE = {
-  ms: 1800, hold: 1400,
+  ms: 3200, hold: 1400,
+  tick: 140, // знаки меняются не каждый кадр, а раз в tick мс: быстрее глаз не успевает
   run: ({ fx, word, alive }) => {
     const w = word.toUpperCase();
     fx.className = 'center huge';
     // Длинная фраза ужимается под ширину окна: 14vh — потолок, 70vw — ширина окна.
     fx.style.fontSize = `min(14vh, ${(70 / (w.length * 0.64)).toFixed(1)}vw)`;
+    let noise = '', step = -1;
     return animate(DECODE.ms, alive, t => {
       const fixed = Math.floor(t * (w.length + 1));
-      const text = [...w].map((c, i) => i < fixed || c === ' ' ? c : glyph()).join('');
+      const now = Math.floor(t * DECODE.ms / DECODE.tick);
+      if (now !== step) { step = now; noise = [...w].map(() => glyph()).join(''); }
+      const text = [...w].map((c, i) => i < fixed || c === ' ' ? c : noise[i]).join('');
       fx.innerHTML = t >= 1 ? lit(text) : esc(text);
     });
   },
