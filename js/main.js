@@ -44,7 +44,7 @@ function render() {
   $('done').textContent = word;
   $('total').textContent = LEVELS[level].length;
   $('typed').textContent = typed.toUpperCase();
-  $('sectors').innerHTML = LEVELS.map((_, i) => i < level ? '<span class="done">■</span>' : i === level ? '<span class="cur">■</span>' : '□').join('');
+  $('sectors').innerHTML = LEVELS.map((_, i) => i < level ? '<span class="done">■</span>' : i === level ? '<span class="now">■</span>' : '□').join('');
   netmap.update(level >= NETMAP_FROM, word, LEVELS[level].length);
   scope.update(level >= SCOPE_FROM);
   const show = wrong >= HINT_AFTER && typed.length < target().length;
