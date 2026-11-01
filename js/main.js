@@ -1,5 +1,6 @@
 import { LEVELS } from '../levels.js';
 import { pickEffect } from './fx.js';
+import * as fxSfx from './sfx.js';
 
 const HINT_AFTER = 3;
 const NEXT_WORD_MS = 150;
@@ -146,7 +147,6 @@ function reject() {
 }
 
 function accept() {
-  sfx.access();
   scene = 'accepting';
   $('typed').classList.add('won');
   status('');
@@ -156,8 +156,9 @@ function accept() {
   const step = f => () => alive() ? f() : new Promise(() => {});
   const effect = pickEffect();
   openWin()
-    .then(step(() => effect.run({ fx: $('fx'), word: target(), alive })))
+    .then(step(() => effect.run({ fx: $('fx'), word: target(), alive, sfx: fxSfx })))
     .then(step(() => wait(effect.hold)))
+    .then(step(() => { fxSfx.play('access'); return wait(250); }))
     .then(step(closeWin))
     .then(step(accepted));
 }
@@ -166,11 +167,13 @@ function openWin() {
   const w = $('win');
   $('fx').textContent = ''; $('fx').className = ''; $('fx').style.fontSize = '';
   w.className = 'win on opening';
+  fxSfx.play('win-open');
   return wait(280).then(() => { w.className = 'win on ready'; });
 }
 function closeWin() {
   const w = $('win');
   w.className = 'win on closing';
+  fxSfx.play('win-close');
   return wait(180).then(() => { w.className = 'win'; });
 }
 function accepted() {
@@ -233,6 +236,7 @@ function begin() {
     audioCtx.resume();
   } catch (e) { audioCtx = null; }
   $('login').classList.remove('on');
+  fxSfx.preload();
   scene = 'playing';
   const lvl = levelFromHash();
   startLevel(lvl, wordFromHash(lvl));

@@ -12,6 +12,7 @@
 // Служебная страница: все сценки по кнопке в том же окне и с теми же стилями, что в игре.
 // Стили берутся из index.html, чтобы не держать копию. Открывать через tools/dev-server.py.
 import { EFFECTS } from '../js/fx.js';
+import * as sfx from '../js/sfx.js';
 const html = await (await fetch('../index.html')).text();
 const style = new DOMParser().parseFromString(html, 'text/html').querySelector('style');
 style.textContent = style.textContent.replaceAll('url(fonts/', 'url(../fonts/');
@@ -30,12 +31,13 @@ async function play(effect, withWindow) {
   const my = ++run, alive = () => my === run;
   const w = $('win'), fx = $('fx');
   fx.textContent = ''; fx.className = ''; fx.style.fontSize = '';
-  if (withWindow) { w.className = 'win on opening'; await wait(280); if (!alive()) return; }
+  if (withWindow) { w.className = 'win on opening'; sfx.play('win-open'); await wait(280); if (!alive()) return; }
   w.className = 'win on ready';
-  if (effect) await effect.run({ fx, word: $('word').value, alive });
+  if (effect) await effect.run({ fx, word: $('word').value, alive, sfx });
   if (!withWindow || !alive()) return;
   await wait(effect?.hold ?? 400); if (!alive()) return;
-  w.className = 'win on closing'; await wait(180); if (!alive()) return;
+  sfx.play('access'); await wait(250); if (!alive()) return;
+  w.className = 'win on closing'; sfx.play('win-close'); await wait(180); if (!alive()) return;
   w.className = 'win';
 }
 const button = (label, onClick) => {

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>Звуки сценок</title>
+<style>body{font:20px Menlo,monospace;background:#0b0f0c;color:#8cff7a;padding:20px}h2{color:#ffc24a;margin:24px 0 8px}button{font:inherit;background:#13241a;color:#8cff7a;border:1px solid #3f7a39;padding:6px 14px;margin:4px;cursor:pointer}button.missing{color:#ff6b6b;border-color:#ff6b6b}small{opacity:.6}</style>
+</head><body><h1>Звуки: audio/sfx/*.m4a</h1><p><small>Пересобрать: python3 tools/sfx.py</small></p><div id="list"></div>
+<script type="module">
+const GROUPS = {
+  'Окно': ['win-open', 'win-close', 'access', 'chord'],
+  'Расшифровка': ['tick', 'tick2', 'tick3', 'chirp1', 'chirp2', 'chirp3', 'chirp4', 'chirp5'],
+  'Загрузка': ['bar-rise', 'ding'],
+  'Дождь': ['drop', 'drop2', 'drop3'],
+  'Машинка': ['key', 'key2', 'key3', 'carriage'],
+};
+const list = document.getElementById('list');
+for (const [title, names] of Object.entries(GROUPS)) {
+  const h = document.createElement('h2'); h.textContent = title; list.appendChild(h);
+  for (const name of names) {
+    const b = document.createElement('button'); b.textContent = name;
+    const a = new Audio(`../audio/sfx/${name}.m4a`);
+    a.onloadedmetadata = () => { b.textContent = `${name} ${Math.round(a.duration * 1000)} мс`; };
+    a.onerror = () => b.classList.add('missing');
+    b.onclick = () => { a.currentTime = 0; a.play(); };
+    list.appendChild(b);
+  }
+}
+</script></body></html>
