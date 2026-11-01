@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>Озвучка</title>
+<style>body{font:20px Menlo,monospace;background:#0b0f0c;color:#8cff7a;padding:20px}h2{color:#ffc24a;margin:24px 0 8px}button{font:inherit;background:#13241a;color:#8cff7a;border:1px solid #3f7a39;padding:6px 14px;margin:4px;cursor:pointer}button.missing{color:#ff6b6b;border-color:#ff6b6b}</style>
+</head><body><h1>Озвучка: audio/*.m4a</h1><div id="list"></div>
+<script type="module">
+import { LEVELS } from '../levels.js';
+const list = document.getElementById('list');
+LEVELS.forEach((words, i) => {
+  const h = document.createElement('h2'); h.textContent = `Уровень ${i + 1}`; list.appendChild(h);
+  for (const w of words) {
+    const b = document.createElement('button'); b.textContent = w;
+    const a = new Audio(`../audio/${encodeURIComponent(w)}.m4a`);
+    a.onerror = () => b.classList.add('missing');
+    b.onclick = () => { a.currentTime = 0; a.play(); };
+    list.appendChild(b);
+  }
+});
+</script></body></html>
