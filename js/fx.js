@@ -88,8 +88,9 @@ const BAR = {
   run: ({ fx, alive }) => animate(BAR.ms, alive, t => {
     const p = Math.min(t / 0.8, 1), n = Math.round(p * 26), pct = String(Math.round(p * 100)).padStart(3);
     fx.className = 'center';
-    // «OK» рядом с заголовком, место под него занято заранее: ни заголовок, ни полоса не прыгают.
-    fx.innerHTML = `проверка пароля` + (t >= 0.85 ? lit('  OK') : '    ') + `\n\n[${'█'.repeat(n)}${'░'.repeat(26 - n)}] ${pct}%`;
+    // «OK» рядом с заголовком и всегда в разметке, до поры невидимый: пробелы в конце строки pre
+    // «висят» и ширину не держат, а невидимый текст держит, и заголовок не прыгает.
+    fx.innerHTML = `проверка пароля<span class="lit"${t >= 0.85 ? '' : ' style="visibility:hidden"'}>  OK</span>\n\n[${'█'.repeat(n)}${'░'.repeat(26 - n)}] ${pct}%`;
   }),
 };
 
