@@ -1,10 +1,9 @@
-import { LEVELS } from '../levels.js';
-import { pickEffect } from './fx.js';
+import { LEVELS, NAMES } from '../levels.js';
+import { pickEffect, GATE } from './fx.js';
 import * as fxSfx from './sfx.js';
 
 const HINT_AFTER = 3;
 const NEXT_WORD_MS = 150;
-const GRANTED_MS = 2600;
 
 const $ = id => document.getElementById(id);
 // Английская раскладка печатает русские буквы по тем же клавишам: ребёнок не переключает раскладку.
@@ -103,7 +102,6 @@ const sfx = {
   key: () => beep(1200, 40, 'square', 0.025),
   full: () => { beep(880, 60, 'square', 0.03); setTimeout(() => beep(1320, 90, 'square', 0.03), 60); },
   reject: () => beep(110, 90, 'triangle', 0.12),
-  granted: () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 180), i * 120)),
 };
 
 function speak() {
@@ -179,16 +177,17 @@ function skipScene() {
   finishScene(step);
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
-function openWin() {
+function openWin(kind = '') {
   const w = $('win');
   $('fx').textContent = ''; $('fx').className = ''; $('fx').removeAttribute('style');
-  w.className = 'win on opening';
+  w.firstElementChild.classList.remove('shake');
+  w.className = `win on opening ${kind}`;
   fxSfx.play('win-open');
-  return wait(280).then(() => { w.className = 'win on ready'; });
+  return wait(280).then(() => { w.className = `win on ready ${kind}`; });
 }
 function closeWin() {
   const w = $('win');
-  w.className = 'win on closing';
+  w.className = w.className.replace(/\b(opening|ready|flash)\b/g, '') + ' closing';
   fxSfx.play('win-close');
   return wait(180).then(() => { w.className = 'win'; });
 }
@@ -201,15 +200,17 @@ function accepted() {
   const d = $('done');
   d.classList.remove('pulse'); void d.offsetWidth; d.classList.add('pulse');
   if (word < LEVELS[level].length) { scene = 'playing'; nextTimer = setTimeout(speak, NEXT_WORD_MS); return; }
+  // Конец уровня: сцена ворот во весь экран, потом следующий уровень или финал.
   scene = 'granted';
-  sfx.granted();
-  $('grantedText').textContent = `уровень ${level + 1} открыт`;
-  $('granted').classList.add('on');
-  nextTimer = setTimeout(() => {
-    $('granted').classList.remove('on');
-    if (level + 1 < LEVELS.length) { scene = 'playing'; startLevel(level + 1); }
-    else { scene = 'final'; $('final').classList.add('on'); document.body.classList.add('final'); }
-  }, GRANTED_MS);
+  const [alive, step] = newRun();
+  openWin('full')
+    .then(step(() => GATE.run({ fx: $('fx'), level: level + 1, name: NAMES[level], alive, sfx: fxSfx, win: $('win') })))
+    .then(step(() => wait(300)))
+    .then(step(closeWin))
+    .then(step(() => {
+      if (level + 1 < LEVELS.length) { scene = 'playing'; startLevel(level + 1); }
+      else { scene = 'final'; $('final').classList.add('on'); document.body.classList.add('final'); }
+    }));
 }
 
 function typeChar(ch) {
@@ -277,7 +278,7 @@ document.addEventListener('mousedown', () => { if (scene === 'login') begin(); }
 // Свои replaceState событие не дают, так что любой hashchange — от человека, в том числе тот же уровень заново.
 window.addEventListener('hashchange', () => {
   if (!['playing', 'accepting', 'pause', 'granted', 'final'].includes(scene)) return;
-  for (const id of ['pause', 'granted', 'final']) $(id).classList.remove('on');
+  for (const id of ['pause', 'final']) $(id).classList.remove('on');
   document.body.classList.remove('final');
   scene = 'playing';
   const lvl = levelFromHash();

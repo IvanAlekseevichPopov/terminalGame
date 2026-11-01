@@ -38,6 +38,12 @@ body.final .cur{display:none}
 .winbox{width:70vw;height:55vh;border:3px solid var(--fg);background:#060906;box-shadow:0 0 40px rgba(140,255,122,.35),inset 0 0 60px rgba(0,0,0,.6);display:flex;flex-direction:column;overflow:hidden}
 .win.opening .winbox{animation:wopen .28s linear forwards}
 .win.closing .winbox{animation:wclose .18s linear forwards}
+/* Конец уровня: окно почти во весь экран, вспышка и тряска, когда ворота взрываются. */
+.win.full .winbox{width:96vw;height:90vh}
+.win.flash{animation:flash .4s linear forwards}
+@keyframes flash{0%{background:rgba(255,230,160,.85)}100%{background:rgba(0,0,0,.6)}}
+.winbox.shake{animation:shake .5s linear}
+@keyframes shake{10%,90%{transform:translate(-8px,3px)}20%,80%{transform:translate(10px,-5px)}30%,50%,70%{transform:translate(-14px,8px)}40%,60%{transform:translate(14px,-8px)}}
 .winbox>*{visibility:hidden}
 .win.ready .winbox>*{visibility:visible}
 @keyframes wopen{0%{transform:scale(0,.015)}45%{transform:scale(1,.015)}100%{transform:scale(1,1)}}
@@ -78,7 +84,6 @@ body.accepting .cur{visibility:hidden}
 </div>
 <div class="win" id="win"><div class="winbox"><div class="wintitle">■ ПРОВЕРКА ПАРОЛЯ · <b>ДОСТУП</b></div><pre id="fx"></pre></div></div>
 <div class="overlay on" id="login"><div><span style="color:var(--dim)">login:</span> <span class="cur"></span></div><div class="small">нажми любую клавишу</div></div>
-<div class="overlay" id="granted"><div class="big">ДОСТУП РАЗРЕШЁН</div><div class="small" id="grantedText"></div></div>
 <div class="overlay" id="pause"><div class="menu"><div class="sel">продолжить</div><div>уровень заново</div></div></div>
 <div class="overlay" id="final"><div class="big">ВСЕ УРОВНИ ОТКРЫТЫ</div><div class="small">доступ полный</div></div>
 <script type="module" src="js/main.js"></script>

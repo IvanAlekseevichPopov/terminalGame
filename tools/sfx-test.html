@@ -7,8 +7,9 @@ const GROUPS = {
   'Окно': ['win-open', 'win-close', 'access', 'chord'],
   'Расшифровка': ['tick', 'tick2', 'tick3', 'chirp1', 'chirp2', 'chirp3', 'chirp4', 'chirp5'],
   'Загрузка': ['bar-rise', 'ding'],
-  'Дождь': ['drop', 'drop2', 'drop3'],
+  'Дождь (капли не используются, отвергнуты)': ['drop', 'drop2', 'drop3'],
   'Машинка': ['key', 'key2', 'key3', 'carriage'],
+  'Конец уровня': ['boom', 'fanfare'],
 };
 const list = document.getElementById('list');
 for (const [title, names] of Object.entries(GROUPS)) {

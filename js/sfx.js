@@ -1,7 +1,7 @@
 // Звуки сценок и окна: заранее сгенерированные файлы audio/sfx/*.m4a (tools/sfx.py), не Web Audio.
 // play() клонирует элемент, чтобы быстрые повторы (тики, клавиши) накладывались, а не обрывали друг друга.
 const NAMES = ['win-open', 'win-close', 'tick', 'tick2', 'tick3', 'chirp1', 'chirp2', 'chirp3', 'chirp4', 'chirp5',
-  'chord', 'bar-rise', 'ding', 'drop', 'drop2', 'drop3', 'key', 'key2', 'key3', 'carriage', 'access'];
+  'chord', 'bar-rise', 'ding', 'drop', 'drop2', 'drop3', 'key', 'key2', 'key3', 'carriage', 'access', 'boom', 'fanfare'];
 const cache = {};
 const src = name => new URL(`../audio/sfx/${name}.m4a`, import.meta.url).href;
 

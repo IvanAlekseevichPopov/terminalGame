@@ -163,6 +163,29 @@ def carriage():
     return place(0.35, (0, bell), (0.11, slide))
 
 
+def boom():
+    # Взрыв ворот в конце уровня: самый громкий звук в игре (просьба ребёнка): удар шумом с падением высоты.
+    n = int(0.7 * SR)
+    t = np.arange(n) / SR
+    rumble = noise(n, 900) * np.exp(-t / 0.18)
+    crack = noise(n, 14000) * np.exp(-t / 0.03) * 1.2
+    thump = triangle(glide(n, 160, 35)) * np.exp(-t / 0.22) * 1.4
+    return (rumble + crack + thump) * env(n, 0.001, None, 0.05)
+
+
+def fanfare():
+    # Фанфара открытия уровня: четыре ноты вверх и аккорд, длиннее обычного «доступа».
+    notes = [(523.25, 0.0, 0.14), (659.25, 0.14, 0.14), (783.99, 0.28, 0.14), (1046.5, 0.42, 0.5)]
+    parts = []
+    for f, start, dur in notes:
+        n = int(dur * SR)
+        parts.append((start, (square(np.full(n, f), 0.25) + triangle(np.full(n, f / 2)) * 0.6) * env(n, 0.002, 0.25)))
+    cn = int(0.5 * SR)
+    chordv = sum(square(np.full(cn, f), 0.5) for f in (523.25, 659.25, 783.99)) * 0.25 * env(cn, 0.002, 0.2)
+    parts.append((0.42, chordv))
+    return place(0.95, *parts)
+
+
 def access():
     a = int(0.09 * SR)
     b = int(0.16 * SR)
@@ -191,6 +214,8 @@ SOUNDS = {
     'key3': (lambda: key(1.12), -35),
     'carriage': (carriage, -33),
     'access': (access, -32),
+    'boom': (boom, -24),
+    'fanfare': (fanfare, -29),
 }
 
 

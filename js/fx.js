@@ -64,19 +64,18 @@ const BAR = {
 };
 
 // Дождь знаков, сквозь который проступает «ДОСТУП РАЗРЕШЁН»; с появлением фразы дождь уходит в тень.
+// Дождь молчит: капли-блипы отвергнуты родителем («не в тему»), аккорд один раз на допечатанной фразе.
 const RAIN = {
   ms: 2600, hold: 800,
   cols: 36, rows: 6,
   run: ({ fx, alive, sfx = quiet }) => {
     const { cols, rows } = RAIN;
-    let nextDrop = 0, chord = false;
+    let chord = false;
     const drops = [];
     for (let x = 0; x < cols; x++) for (let k = 0; k < 2; k++) drops.push({ x, y: -rnd(rows * 2), v: 0.25 + Math.random() * 0.25 });
     const word = '  ДОСТУП РАЗРЕШЁН  ', wx = Math.floor((cols - word.length) / 2), wy = 3;
     const bg = s => `<span class="bg">${esc(s)}</span>`;
     return animate(RAIN.ms, alive, (t, dt) => {
-      if (t < 0.45 && t >= nextDrop) { nextDrop = t + 0.04 + Math.random() * 0.05; sfx.playVar('drop', 3); }
-      if (t > 0.45 && !chord) { chord = true; sfx.play('chord'); }
       const grid = Array.from({ length: rows }, () => Array(cols).fill(' '));
       for (const d of drops) {
         d.y += d.v * dt;
@@ -89,6 +88,7 @@ const RAIN = {
       for (let y = 0; y < rows; y++) {
         if (y === wy && t > 0.45) {
           const shown = Math.min(word.length, Math.floor((t - 0.45) / 0.03));
+          if (shown === word.length && !chord) { chord = true; sfx.play('chord'); }
           html += bg(grid[y].slice(0, wx).join('')) + lit(word.slice(0, shown).padEnd(word.length)) + bg(grid[y].slice(wx + word.length).join(''));
         } else html += bg(grid[y].join(''));
         html += '\n';
@@ -143,6 +143,61 @@ const HEX = {
 };
 
 export const EFFECTS = [DECODE, BAR, RAIN, TYPE, HEX];
+
+// Конец уровня, окно во весь экран: ворота с номером уровня, под ними бегут коды «подбираю ключ»,
+// щелчок, вспышка и тряска, ворота разлетаются во все стороны, потом имя уровня огромным.
+// Ребёнок-ревьюер: не «сектор», а «уровень», без слова «закрыто» (похоже на проигрыш), взрыв во все стороны.
+export const GATE = {
+  ms: 4200,
+  run: ({ fx, level, name, alive, sfx = quiet, win }) => {
+    const W = 50, H = 13, gw = 26, gh = 7, gx = (W - gw) / 2, gy = 2;
+    const label = ` УРОВЕНЬ ${level} `;
+    const gate = Array.from({ length: gh }, (_, y) => {
+      const row = Array(gw).fill('▓');
+      if (y === 3) [...label].forEach((c, i) => { row[Math.floor((gw - label.length) / 2) + i] = c; });
+      return row;
+    });
+    const pieces = [];
+    for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
+      const dx = (x - gw / 2 + 0.5) / (gw / 2), dy = (y - gh / 2 + 0.5) / (gh / 2);
+      pieces.push({ x: gx + x, y: gy + y, vx: dx * 30 + (Math.random() - 0.5) * 10, vy: dy * 12 + (Math.random() - 0.5) * 6 - 3, ch: gate[y][x] });
+    }
+    const hex = () => rnd(256).toString(16).padStart(2, '0').toUpperCase();
+    let codes = '', codeStep = -1, phase = 0;
+    const T1 = 0.3, T2 = 0.55;
+    return animate(GATE.ms, alive, t => {
+      fx.className = 'center';
+      if (t < T1) {
+        const step = Math.floor(t * GATE.ms / 100);
+        if (step !== codeStep) { codeStep = step; codes = Array.from({ length: 4 }, hex).join(' '); sfx.playVar('tick', 3); }
+        const grid = Array.from({ length: H }, () => Array(W).fill(' '));
+        gate.forEach((row, y) => row.forEach((c, x) => { grid[gy + y][gx + x] = c; }));
+        const line = `подбираю ключ  ${codes}`;
+        [...line].forEach((c, i) => { grid[gy + gh + 2][Math.floor((W - line.length) / 2) + i] = c; });
+        fx.innerHTML = grid.map((r, y) => y === gy + 3 ? esc(r.join('')) : `<span class="bg">${esc(r.join(''))}</span>`).join('\n');
+        return;
+      }
+      if (phase === 0) {
+        phase = 1; sfx.play('ding'); sfx.play('boom');
+        if (win) { win.classList.add('flash'); win.firstElementChild.classList.add('shake'); }
+      }
+      if (t < T2) {
+        const k = (t - T1) / (T2 - T1), sec = k * 1.1;
+        const grid = Array.from({ length: H }, () => Array(W).fill(' '));
+        for (const p of pieces) {
+          const x = Math.round(p.x + p.vx * sec), y = Math.round(p.y + p.vy * sec + 6 * sec * sec);
+          if (x >= 0 && x < W && y >= 0 && y < H) grid[y][x] = k < 0.35 ? p.ch : k < 0.7 ? '▒' : '░';
+        }
+        fx.innerHTML = lit(grid.map(r => r.join('')).join('\n'));
+        return;
+      }
+      if (phase === 1) { phase = 2; sfx.play('fanfare'); }
+      const k = (t - T2) / (1 - T2);
+      fx.innerHTML = `\n<span class="lit" style="font-size:2.6em;line-height:1.2">${esc(name.toUpperCase())}</span>\n\n`
+        + (k > 0.3 ? esc(`уровень ${level} открыт`) : ' ');
+    });
+  },
+};
 
 let last = -1;
 export function pickEffect() {

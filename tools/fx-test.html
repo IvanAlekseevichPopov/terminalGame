@@ -11,7 +11,7 @@
 <script type="module">
 // Служебная страница: все сценки по кнопке в том же окне и с теми же стилями, что в игре.
 // Стили берутся из index.html, чтобы не держать копию. Открывать через tools/dev-server.py.
-import { EFFECTS } from '../js/fx.js';
+import { EFFECTS, GATE } from '../js/fx.js';
 import * as sfx from '../js/sfx.js';
 const html = await (await fetch('../index.html')).text();
 const style = new DOMParser().parseFromString(html, 'text/html').querySelector('style');
@@ -27,17 +27,19 @@ const $ = id => document.getElementById(id);
 let run = 0;
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const names = ['расшифровка', 'полоса', 'дождь', 'машинка', 'hex'];
-async function play(effect, withWindow) {
+async function play(effect, withWindow, full = false) {
   const my = ++run, alive = () => my === run;
   const w = $('win'), fx = $('fx');
   fx.textContent = ''; fx.className = ''; fx.removeAttribute('style');
-  if (withWindow) { w.className = 'win on opening'; sfx.play('win-open'); await wait(280); if (!alive()) return; }
-  w.className = 'win on ready';
-  if (effect) await effect.run({ fx, word: $('word').value, alive, sfx });
+  w.firstElementChild.classList.remove('shake');
+  const kind = full ? ' full' : '';
+  if (withWindow) { w.className = 'win on opening' + kind; sfx.play('win-open'); await wait(280); if (!alive()) return; }
+  w.className = 'win on ready' + kind;
+  if (effect) await effect.run({ fx, word: $('word').value, level: 2, name: 'ангар', win: w, alive, sfx });
   if (!withWindow || !alive()) return;
   await wait(effect?.hold ?? 400); if (!alive()) return;
   sfx.play('access'); await wait(250); if (!alive()) return;
-  w.className = 'win on closing'; sfx.play('win-close'); await wait(180); if (!alive()) return;
+  w.className = 'win on closing' + kind; sfx.play('win-close'); await wait(180); if (!alive()) return;
   w.className = 'win';
 }
 const button = (label, onClick) => {
@@ -48,5 +50,6 @@ const button = (label, onClick) => {
 EFFECTS.forEach((e, i) => button(names[i] ?? i, () => play(e, false)));
 button('окно: открыть/закрыть', () => play(null, true));
 EFFECTS.forEach((e, i) => button('▶ ' + (names[i] ?? i), () => play(e, true)));
+button('▶ конец уровня', () => play(GATE, true, true));
 </script>
 </body></html>
