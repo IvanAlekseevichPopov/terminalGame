@@ -54,7 +54,7 @@ function render() {
   if (!target()) return;
   $('typed').classList.toggle('full', full);
   if (scene === 'accepting') return fit();
-  if (full) status('Enter'); else if (!voice) status('печатай');
+  status(full ? 'Enter' : '');
   fit();
 }
 
@@ -77,7 +77,44 @@ function measure(text, px) {
   el.textContent = saved;
   return w;
 }
-function status(text) { $('speakText').textContent = text; }
+// Строка под вводом: либо эквалайзер, либо «Enter ⏎», когда слово набрано целиком.
+function status(text) {
+  $('speakText').textContent = text === 'Enter' ? 'Enter ⏎' : '';
+  $('speak').classList.toggle('enter', text === 'Enter');
+}
+
+// Эквалайзер под голос: AnalyserNode на элементе с файлом голоса (Web Audio тут только слушает).
+const EQ_BARS = 9, EQ_GLYPHS = '▁▂▃▄▅▆▇█';
+// Полосы по частотам шире к верху, иначе половина столбиков сидит на басах и стоит на месте.
+const EQ_BINS = [[1, 2], [3, 4], [5, 6], [7, 9], [10, 12], [13, 16], [17, 21], [22, 26], [27, 31]];
+let analyser = null, eqTimer = 0;
+function eqAttach(a) {
+  if (!audioCtx) return;
+  try {
+    if (!analyser) {
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64; analyser.smoothingTimeConstant = 0.55;
+      analyser.connect(audioCtx.destination);
+    }
+    audioCtx.createMediaElementSource(a).connect(analyser);
+  } catch (e) { analyser = null; }
+}
+function eqStart() {
+  clearInterval(eqTimer);
+  if (!analyser) return;
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  eqTimer = setInterval(() => {
+    analyser.getByteFrequencyData(data);
+    let out = '';
+    for (let b = 0; b < EQ_BARS; b++) {
+      let v = 0;
+      for (let i = EQ_BINS[b][0]; i <= EQ_BINS[b][1]; i++) v = Math.max(v, data[i]);
+      out += EQ_GLYPHS[Math.min(7, Math.floor(v / 256 * 9))];
+    }
+    $('wave').textContent = out;
+    if (!voice) { clearInterval(eqTimer); $('wave').textContent = '▁'.repeat(EQ_BARS); }
+  }, 40);
+}
 
 function sysLine(text) {
   const d = document.createElement('div');
@@ -117,8 +154,9 @@ function speak() {
   if (voice) { voice.pause(); voice = null; }
   const a = new Audio(`audio/${encodeURIComponent(target())}.m4a`);
   voice = a;
+  eqAttach(a);
   $('speak').classList.add('on');
-  status('слушай…');
+  status('');
   $('typed').classList.remove('won');
   const done = () => {
     if (voice !== a) return;
@@ -127,7 +165,7 @@ function speak() {
     render();
   };
   a.onended = a.onerror = done;
-  a.play().catch(done);
+  a.play().then(eqStart).catch(done);
 }
 
 function startLevel(n, w = 0) {

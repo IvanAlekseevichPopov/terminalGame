@@ -3,7 +3,7 @@
 <style>
 @font-face{font-family:"Game Mono";src:url(fonts/JetBrainsMono-Regular.woff2) format("woff2");font-weight:400;font-display:block}
 @font-face{font-family:"Game Mono";src:url(fonts/JetBrainsMono-Bold.woff2) format("woff2");font-weight:700;font-display:block}
-:root{--bg:#0b0f0c;--fg:#8cff7a;--dim:#3f7a39;--faint:#2f5a35;--amber:#ffc24a;--cyan:#6ee7ff}
+:root{--bg:#0b0f0c;--fg:#8cff7a;--dim:#3f7a39;--faint:#2f5a35;--amber:#ffc24a;}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:#000;color:var(--fg);font-family:"Game Mono",Menlo,monospace;overflow:hidden;cursor:none;text-shadow:0 0 6px rgba(140,255,122,.6)}
 body::after{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.10) 0 2px,transparent 2px 4px)}
@@ -27,11 +27,14 @@ body.final .cur{display:none}
 .cur.shake{animation:sh .18s linear}
 @keyframes b{50%{opacity:0}}
 @keyframes sh{0%,100%{transform:translateX(0)}25%{transform:translateX(-.18em)}75%{transform:translateX(.18em)}}
-.speak{font-size:34px;color:var(--cyan);padding-top:18px;height:60px}
+/* Строка под вводом: эквалайзер под голос (js/main.js, AnalyserNode), а на полном слове — «Enter ⏎» жёлтым.
+   Надписей «слушай…/печатай» нет: голубой не вписывался, а что делать, и так ясно. */
+.speak{font-size:34px;color:var(--dim);padding-top:18px;height:60px}
 .speak .ico{display:inline-block;width:1.2em}
-.speak .wave{display:inline-block;letter-spacing:2px;opacity:.25}
-.speak.on .wave{animation:w .5s steps(3) infinite}
-@keyframes w{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
+.speak .wave{display:inline-block;letter-spacing:2px;color:var(--fg);opacity:.5}
+.speak.on .wave{opacity:1}
+.speak.enter .wave,.speak.enter .ico{display:none}
+.speak #speakText{color:var(--amber);text-shadow:0 0 12px rgba(255,194,74,.6)}
 /* Окно сценки: раскрывается из точки в полосу и в окно, как включение ЭЛТ; закрывается обратно. */
 .win{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6)}
 .win.on{display:flex}
@@ -86,7 +89,7 @@ body.accepting .cur{visibility:hidden}
  <div class="bar"><span><b>ПАРОЛИ</b> v0.1 · tty1</span><span>УРОВЕНЬ <b id="lvl">1</b> · <span class="access">ДОСТУП <b id="done">0</b>/<b id="total">6</b></span></span></div>
  <div class="entry">
   <div class="input"><span class="p">&gt;</span> <span id="typed"></span><span class="slot"><span class="hint" id="hint"></span><span class="cur" id="cur"></span></span></div>
-  <div class="speak" id="speak"><span class="ico">♪</span><span class="wave">▁▃▅▇▅▃▁</span> <span id="speakText">слушай…</span></div>
+  <div class="speak" id="speak"><span class="ico">♪</span><span class="wave" id="wave">▁▁▁▁▁▁▁▁▁</span> <span id="speakText"></span></div>
  </div>
  <div class="low"><div class="log" id="log"></div><div class="side"><pre class="scope" id="scope"></pre><pre class="net" id="net"></pre></div></div>
  <div class="foot"><span id="sys1">root@tty1</span><span id="clock">00:00:00</span><span style="color:var(--fg);opacity:.6">Esc — пауза</span></div>
