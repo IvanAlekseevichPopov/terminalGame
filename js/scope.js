@@ -24,11 +24,15 @@ function frame() {
   if (spike > 0) { v = spike >= 4 ? 1 : spike === 3 ? 0.05 : 0.7; spike--; }
   if (flat > 0) { v = 0; flat--; }
   buf.push(Math.max(0, Math.min(1, v))); buf.shift();
-  // Две строки блоков: нижняя заполняется до половины амплитуды, верхняя — остальное; всплеск жёлтым.
-  const cell = (x, half) => {
-    const v = Math.max(0, Math.min(1, (x - half * 0.5) * 2));
+  // Три строки блоков снизу вверх, каждая на треть амплитуды; всплеск жёлтым. line-height 1, чтобы блоки стыковались.
+  const ROWS = 3;
+  const cell = (x, row) => {
+    const v = Math.max(0, Math.min(1, x * ROWS - row));
     const g = GLYPHS[Math.round(v * (GLYPHS.length - 1))];
     return x >= 0.95 ? `<span class="lit">${g}</span>` : g;
   };
-  el.innerHTML = '<span class="dim">      </span>' + buf.map(x => cell(x, 1)).join('') + '\n<span class="dim">scope </span>' + buf.map(x => cell(x, 0)).join('');
+  el.innerHTML = Array.from({ length: ROWS }, (_, i) => {
+    const row = ROWS - 1 - i;
+    return `<span class="dim">${row === 0 ? 'scope ' : '      '}</span>` + buf.map(x => cell(x, row)).join('');
+  }).join('\n');
 }
