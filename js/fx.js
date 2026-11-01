@@ -153,7 +153,7 @@ const HEX = {
       const want = Math.floor(Math.min(t / 0.7, 1) * 12);
       while (shown < want) { lines.push(row(4 + shown)); lines.shift(); shown++; }
       fx.className = 'center';
-      fx.innerHTML = esc(lines.join('\n')) + '\n\n' + (t > 0.6 ? lit(`|${word.toUpperCase()}|  OK`) : '');
+      fx.innerHTML = esc(lines.join('\n')) + '\n\n' + (t > 0.6 ? lit(`${word.toUpperCase()}  OK`) : '');
     });
   },
 };
