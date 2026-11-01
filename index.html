@@ -13,7 +13,8 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;background:rep
 /* Полоска секторов: по ячейке на уровень, пройденные жёлтые, текущий зелёный. Весь путь игры одним взглядом. */
 .bar .sectors{margin-left:1.5em;letter-spacing:.15em}
 .bar .sectors .done{color:var(--amber)}
-.bar .sectors .now{color:var(--fg)}
+.bar .sectors .now{color:var(--fg);animation:sector 1.2s ease-in-out infinite}
+@keyframes sector{50%{opacity:.3}}
 .bar .access{color:var(--amber);font-size:44px}
 .bar .access b{color:var(--fg);display:inline-block}
 .bar .access b.pulse{animation:pulse .3s ease-out}
