@@ -22,9 +22,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - name: Assemble the site
         run: |
           mkdir -p site/tools
