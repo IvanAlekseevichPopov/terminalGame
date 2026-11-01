@@ -186,6 +186,27 @@ def fanfare():
     return place(0.95, *parts)
 
 
+def type_key():
+    # Верная буква: короткий высокий щелчок квадратом, как было в Web Audio (1200 Гц, 40 мс).
+    n = int(0.04 * SR)
+    return square(np.full(n, 1200), 0.5) * env(n, 0.001, 0.012)
+
+
+def word_full():
+    # Слово набрано целиком: две ноты вверх (880 → 1320 Гц).
+    a = int(0.06 * SR)
+    b = int(0.09 * SR)
+    s1 = square(np.full(a, 880), 0.5) * env(a, 0.001, 0.03, 0.002)
+    s2 = square(np.full(b, 1320), 0.5) * env(b, 0.001, 0.03)
+    return np.concatenate([s1, s2])
+
+
+def reject():
+    # Неверная буква: тихий низкий «тук» треугольником (110 Гц, 90 мс).
+    n = int(0.09 * SR)
+    return triangle(np.full(n, 110)) * env(n, 0.001, 0.03)
+
+
 def access():
     a = int(0.09 * SR)
     b = int(0.16 * SR)
@@ -215,6 +236,9 @@ SOUNDS = {
     'carriage': (carriage, -33),
     'access': (access, -32),
     'boom': (boom, -24),
+    'type-key': (type_key, -36),
+    'word-full': (word_full, -33),
+    'reject': (reject, -27),
     'fanfare': (fanfare, -29),
 }
 

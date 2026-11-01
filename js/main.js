@@ -157,19 +157,11 @@ function trimLog() {
   while (log.children.length > 9) log.removeChild(log.firstChild);
 }
 
-function beep(freq, ms, type = 'square', gain = 0.05) {
-  if (!audioCtx) return;
-  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-  o.type = type; o.frequency.value = freq;
-  g.gain.setValueAtTime(gain, audioCtx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + ms / 1000);
-  o.connect(g).connect(audioCtx.destination);
-  o.start(); o.stop(audioCtx.currentTime + ms / 1000);
-}
+// Все звуки — файлы из audio/sfx (sfx.js); AudioContext нужен только эквалайзеру.
 const sfx = {
-  key: () => beep(1200, 40, 'square', 0.025),
-  full: () => { beep(880, 60, 'square', 0.03); setTimeout(() => beep(1320, 90, 'square', 0.03), 60); },
-  reject: () => beep(110, 90, 'triangle', 0.12),
+  key: () => fxSfx.play('type-key'),
+  full: () => fxSfx.play('word-full'),
+  reject: () => fxSfx.play('reject'),
 };
 
 function speak() {
