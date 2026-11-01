@@ -2,9 +2,11 @@ import { LEVELS, NAMES } from '../levels.js';
 import { pickEffect, GATE } from './fx.js';
 import * as fxSfx from './sfx.js';
 import * as netmap from './netmap.js';
+import * as scope from './scope.js';
 
 const HINT_AFTER = 3;
 const NETMAP_FROM = 4; // индекс уровня, с которого видна карта сети (5-й)
+const SCOPE_FROM = 9; // индекс уровня, с которого виден осциллограф (10-й)
 const NEXT_WORD_MS = 150;
 
 const $ = id => document.getElementById(id);
@@ -40,6 +42,7 @@ function render() {
   $('total').textContent = LEVELS[level].length;
   $('typed').textContent = typed.toUpperCase();
   netmap.update(level >= NETMAP_FROM, word, LEVELS[level].length);
+  scope.update(level >= SCOPE_FROM);
   const show = wrong >= HINT_AFTER && typed.length < target().length;
   const next = show ? target()[typed.length] : '';
   $('hint').textContent = next === ' ' ? '␣' : next.toUpperCase();
@@ -145,6 +148,7 @@ function startLevel(n, w = 0) {
 function reject() {
   wrong++;
   sfx.reject();
+  scope.pulse('bad');
   const c = $('cur');
   c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake');
   render();
@@ -225,6 +229,7 @@ function typeChar(ch) {
   if (norm(ch) === norm(t[typed.length])) {
     typed += t[typed.length];
     wrong = 0;
+    scope.pulse('ok');
     if (typed === t) sfx.full(); else sfx.key();
     render();
   } else reject();
@@ -260,6 +265,7 @@ function begin() {
   $('login').classList.remove('on');
   fxSfx.preload();
   netmap.mount($('net'));
+  scope.mount($('scope'));
   scene = 'playing';
   const lvl = levelFromHash();
   startLevel(lvl, wordFromHash(lvl));
