@@ -2,7 +2,8 @@ import { LEVELS } from '../levels.js';
 import { pickEffect } from './fx.js';
 
 const HINT_AFTER = 3;
-const NEXT_WORD_MS = 700;
+const NEXT_WORD_MS = 150;
+const HOLD_MS = 400;
 const GRANTED_MS = 2600;
 
 const $ = id => document.getElementById(id);
@@ -23,6 +24,13 @@ function levelFromHash() {
   return Math.min(Math.max(n, 1), LEVELS.length) - 1;
 }
 
+// Номер пароля внутри уровня тоже в адресе: рефреш продолжает с того же слова, а не с начала уровня.
+function wordFromHash(lvl) {
+  const m = location.hash.match(/word=(\d+)/);
+  return m ? Math.min(+m[1], LEVELS[lvl].length - 1) : 0;
+}
+function saveProgress() { history.replaceState(null, '', `#level=${level + 1}&word=${word}`); }
+
 function target() { return LEVELS[level][word] ?? ''; }
 
 function render() {
@@ -37,6 +45,7 @@ function render() {
   const full = typed.length > 0 && typed === target();
   if (!target()) return;
   $('typed').classList.toggle('full', full);
+  if (scene === 'accepting') return fit();
   if (full) status('Enter'); else if (!voice) status('печатай');
   fit();
 }
@@ -102,7 +111,6 @@ function speak() {
   $('speak').classList.add('on');
   status('слушай…');
   $('typed').classList.remove('won');
-  $('fx').textContent = ''; $('fx').className = '';
   const done = () => {
     if (voice !== a) return;
     voice = null;
@@ -113,14 +121,15 @@ function speak() {
   a.play().catch(done);
 }
 
-function startLevel(n) {
+function startLevel(n, w = 0) {
   clearTimeout(nextTimer);
   fxRun++;
   document.body.classList.remove('accepting');
+  $('win').className = 'win';
   if (voice) { voice.pause(); voice = null; }
   $('typed').classList.remove('won');
-  level = n; word = 0; typed = ''; wrong = 0;
-  history.replaceState(null, '', `#level=${level + 1}`);
+  level = n; word = w; typed = ''; wrong = 0;
+  saveProgress();
   $('log').innerHTML = '';
   sysLine(`[ OK ] уровень ${level + 1} ........... найден`);
   sysLine(`[ OK ] паролей ................ ${LEVELS[level].length}`);
@@ -143,13 +152,32 @@ function accept() {
   $('typed').classList.add('won');
   status('');
   document.body.classList.add('accepting');
-  const run = ++fxRun;
-  pickEffect().run({ fx: $('fx'), typed: $('typed'), word: target(), alive: () => run === fxRun }).then(accepted);
+  const run = ++fxRun, alive = () => run === fxRun;
+  // Уровень перезапустили во время сценки: цепочка обрывается, startLevel уже прибрал окно.
+  const step = f => () => alive() ? f() : new Promise(() => {});
+  openWin()
+    .then(step(() => pickEffect().run({ fx: $('fx'), word: target(), alive })))
+    .then(step(() => wait(HOLD_MS)))
+    .then(step(closeWin))
+    .then(step(accepted));
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function openWin() {
+  const w = $('win');
+  $('fx').textContent = ''; $('fx').className = '';
+  w.className = 'win on opening';
+  return wait(280).then(() => { w.className = 'win on ready'; });
+}
+function closeWin() {
+  const w = $('win');
+  w.className = 'win on closing';
+  return wait(180).then(() => { w.className = 'win'; });
 }
 function accepted() {
   document.body.classList.remove('accepting');
   okLine(target());
   word++; typed = ''; wrong = 0;
+  if (word < LEVELS[level].length) saveProgress();
   render();
   const d = $('done');
   d.classList.remove('pulse'); void d.offsetWidth; d.classList.add('pulse');
@@ -206,7 +234,8 @@ function begin() {
   } catch (e) { audioCtx = null; }
   $('login').classList.remove('on');
   scene = 'playing';
-  startLevel(levelFromHash());
+  const lvl = levelFromHash();
+  startLevel(lvl, wordFromHash(lvl));
 }
 
 // Ширины строки считаются по шрифту: ждём его до секунды, чтобы первый fit() не мерил запасной.

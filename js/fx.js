@@ -1,6 +1,6 @@
 // Сценки принятого пароля: короткие картинки в терминальном стиле, по очереди, чтобы не надоедали.
-// Каждая рисует текстом в #fx (DECODE — в #typed) и обещает закончить за свои ms. Последний кадр
-// остаётся на экране до следующего слова: это и есть награда, main.js его не стирает.
+// Каждая рисует текстом в #fx внутри окна и обещает закончить за свои ms. Последний кадр
+// держится HOLD_MS, потом main.js закрывает окно.
 // ctx.alive() говорит, что уровень не перезапущен: иначе кадры останавливаются.
 
 const GLYPHS = 'АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЩЭЮЯ0123456789#$%&*+=?@';
@@ -64,13 +64,13 @@ const SAFE = {
 // Расшифровка: буквы слова мелькают случайными знаками и по одной застывают слева направо.
 const DECODE = {
   ms: 900,
-  run: ({ fx, typed, word, alive }) => {
+  run: ({ fx, word, alive }) => {
     const w = word.toUpperCase();
-    fx.textContent = '';
+    fx.className = 'center ' + (w.length <= 7 ? 'huge' : 'big');
     return animate(DECODE.ms, alive, t => {
       const fixed = Math.floor(t * (w.length + 1));
-      typed.textContent = [...w].map((c, i) => i < fixed || c === ' ' ? c : glyph()).join('');
-      typed.classList.toggle('won', t >= 1);
+      const text = [...w].map((c, i) => i < fixed || c === ' ' ? c : glyph()).join('');
+      fx.innerHTML = t >= 1 ? lit(text) : esc(text);
     });
   },
 };
@@ -124,7 +124,7 @@ const TYPE = {
     return animate(TYPE.ms, alive, t => {
       let left = Math.floor(t * total), out = [];
       for (const l of lines) { out.push(l.slice(0, left)); left -= l.length + 1; if (left < 0) break; }
-      fx.className = 'indent';
+      fx.className = '';
       fx.innerHTML = '\n' + out.map((l, i) => i === 2 && t >= 1 ? lit(l) : esc(l)).join('\n') + (t < 1 ? '_' : '');
     });
   },

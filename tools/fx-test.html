@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>сценки</title>
+<style>
+#panel{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;flex-wrap:wrap;gap:10px;padding:14px 40px;background:#000;border-top:1px solid #2f5a35;font-size:22px}
+#panel button,#panel input{font:inherit;background:#0b0f0c;color:#8cff7a;border:1px solid #3f7a39;padding:6px 16px;cursor:pointer}
+#panel button:hover{border-color:#ffc24a;color:#ffc24a}
+#panel input{width:14em;cursor:text}
+</style></head><body>
+<div id="panel"><input id="word" value="кот"></div>
+<div class="win on ready" id="win"><div class="winbox"><div class="wintitle">■ ПРОВЕРКА ПАРОЛЯ · <b>ДОСТУП</b></div><pre id="fx"></pre></div></div>
+<script type="module">
+// Служебная страница: все сценки по кнопке в том же окне и с теми же стилями, что в игре.
+// Стили берутся из index.html, чтобы не держать копию. Открывать через tools/dev-server.py.
+import { EFFECTS } from '../js/fx.js';
+const html = await (await fetch('../index.html')).text();
+const style = new DOMParser().parseFromString(html, 'text/html').querySelector('style');
+style.textContent = style.textContent.replaceAll('url(fonts/', 'url(../fonts/');
+document.head.appendChild(style);
+document.body.style.cursor = 'auto';
+document.body.insertAdjacentHTML('afterbegin', html.match(/<div class="crt"[\s\S]*?<\/div>\n<\/div>/)[0]);
+document.getElementById('typed').textContent = 'КОТ';
+document.getElementById('typed').className = 'won';
+document.body.classList.add('accepting');
+
+const $ = id => document.getElementById(id);
+let run = 0;
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const names = ['сейф', 'расшифровка', 'полоса', 'дождь', 'машинка', 'hex', 'отсчёт'];
+async function play(effect, withWindow) {
+  const my = ++run, alive = () => my === run;
+  const w = $('win'), fx = $('fx');
+  fx.textContent = ''; fx.className = '';
+  if (withWindow) { w.className = 'win on opening'; await wait(280); if (!alive()) return; }
+  w.className = 'win on ready';
+  if (effect) await effect.run({ fx, word: $('word').value, alive });
+  if (!withWindow || !alive()) return;
+  await wait(400); if (!alive()) return;
+  w.className = 'win on closing'; await wait(180); if (!alive()) return;
+  w.className = 'win';
+}
+const button = (label, onClick) => {
+  const b = document.createElement('button');
+  b.textContent = label; b.onclick = onClick;
+  $('panel').appendChild(b);
+};
+EFFECTS.forEach((e, i) => button(names[i] ?? i, () => play(e, false)));
+button('окно: открыть/закрыть', () => play(null, true));
+EFFECTS.forEach((e, i) => button('▶ ' + (names[i] ?? i), () => play(e, true)));
+</script>
+</body></html>
