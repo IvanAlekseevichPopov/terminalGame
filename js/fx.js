@@ -153,23 +153,12 @@ const HEX = {
       const want = Math.floor(Math.min(t / 0.7, 1) * 12);
       while (shown < want) { lines.push(row(4 + shown)); lines.shift(); shown++; }
       fx.className = 'center';
-      fx.innerHTML = esc(lines.join('\n')) + '\n\n' + (t > 0.6 ? lit(`${word.toUpperCase()}  OK`) : '');
+      fx.innerHTML = esc(lines.join('\n')) + '\n\n' + (t > 0.6 ? `<span class="lit"><span class="bars">${esc(word.toUpperCase())}</span>  OK</span>` : '');
     });
   },
 };
 
-// Отсчёт: 3, 2, 1 крупно и «ДОСТУП».
-const COUNT = {
-  ms: 2400, hold: 1200,
-  run: ({ fx, alive }) => animate(COUNT.ms, alive, t => {
-    const step = Math.floor(t / 0.28);
-    const text = step < 3 ? String(3 - step) : 'ДОСТУП';
-    fx.className = 'center huge';
-    fx.innerHTML = step < 3 ? esc(text) : lit(text);
-  }),
-};
-
-export const EFFECTS = [SAFE, DECODE, BAR, RAIN, TYPE, HEX, COUNT];
+export const EFFECTS = [SAFE, DECODE, BAR, RAIN, TYPE, HEX];
 
 let last = -1;
 export function pickEffect() {

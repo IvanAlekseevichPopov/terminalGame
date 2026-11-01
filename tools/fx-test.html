@@ -25,7 +25,7 @@ document.body.classList.add('accepting');
 const $ = id => document.getElementById(id);
 let run = 0;
 const wait = ms => new Promise(r => setTimeout(r, ms));
-const names = ['сейф', 'расшифровка', 'полоса', 'дождь', 'машинка', 'hex', 'отсчёт'];
+const names = ['сейф', 'расшифровка', 'полоса', 'дождь', 'машинка', 'hex'];
 async function play(effect, withWindow) {
   const my = ++run, alive = () => my === run;
   const w = $('win'), fx = $('fx');
